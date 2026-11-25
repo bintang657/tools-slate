@@ -59,15 +59,14 @@ async function handleExtract(req, res) {
     // Provider adapter: Ssave aktif. Knightvision dapat ditambahkan setelah akses dan kontrak API resminya diverifikasi.
     if (PROVIDER !== 'ssave') return res.status(503).json({ error: 'Provider downloader belum dikonfigurasi.' });
     const payload = await extractWithSsave(url);
-    const mediaId = payload?.id ?? payload?.token;
-    if (typeof mediaId !== 'string' || !mediaId.trim() || !Array.isArray(payload.formats) || !payload.download || typeof payload.download !== 'object') {
+    if (!Array.isArray(payload.formats) || !payload.download || typeof payload.download !== 'object') {
       return res.status(502).json({ error: 'Respons Ssave tidak sesuai format yang diharapkan.' });
     }
 
     const media = payload.formats
       .filter(type => DOWNLOAD_TYPES.has(type) && typeof payload.download[type] === 'string')
       .map(type => ({
-        url: `/api/social-download?id=${encodeURIComponent(mediaId.trim())}&type=${encodeURIComponent(type)}`,
+        url: `/api/social-download?source=${encodeURIComponent(Buffer.from(payload.download[type], 'utf8').toString('base64url'))}&type=${encodeURIComponent(type)}`,
         type: type === 'mp3' ? 'audio' : 'video',
         quality: type === 'hd' ? 'HD' : type === 'watermark' ? 'Dengan watermark' : 'MP3',
         label: type === 'hd' ? 'Video HD' : type === 'watermark' ? 'Video dengan watermark' : 'Audio MP3'
@@ -91,35 +90,62 @@ async function handleExtract(req, res) {
 }
 
 async function handleDownload(req, res) {
-  // Treat provider IDs as opaque tokens. Do not assume a fixed prefix/length: the
-  // provider may change token encoding while keeping the extract/download contract.
-  const rawId = req.query?.id ?? req.query?.token;
-  const id = typeof rawId === 'string' ? rawId.trim() : '';
+  const encoded = typeof req.query?.source === 'string' ? req.query.source : '';
   const type = typeof req.query?.type === 'string' ? req.query.type : 'hd';
-  if (!id || id.length > 1024 || /[\u0000-\u001f\u007f]/.test(id) || !DOWNLOAD_TYPES.has(type)) {
-    return res.status(400).json({ error: 'Token unduhan kosong atau format unduhan tidak valid. Silakan cari media lagi.' });
+  if (!encoded || encoded.length > 12000 || !DOWNLOAD_TYPES.has(type)) {
+    return res.status(400).json({ error: 'Tautan unduhan tidak valid. Silakan cari media lagi.' });
+  }
+
+  let sourceUrl;
+  try {
+    sourceUrl = Buffer.from(encoded, 'base64url').toString('utf8');
+    const parsed = new URL(sourceUrl);
+    const host = parsed.hostname.toLowerCase();
+    if (parsed.protocol !== 'https:' || parsed.username || parsed.password || !host || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || /^127\.|^10\.|^192\.168\.|^169\.254\.|^172\.(1[6-9]|2[0-9]|3[01])\./.test(host)) throw new Error('invalid source');
+  } catch {
+    return res.status(400).json({ error: 'URL media dari penyedia tidak valid. Silakan cari media lagi.' });
   }
 
   try {
-    const upstream = await fetch(`${API_BASE}/open/v1/download?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}`, {
-      headers: { Accept: 'application/octet-stream' },
+    const upstream = await fetch(sourceUrl, {
+      headers: { Accept: type === 'mp3' ? 'audio/mpeg,application/octet-stream,*/*' : 'video/mp4,application/octet-stream,*/*' },
       signal: AbortSignal.timeout(120000)
     });
-    if (!upstream.ok) {
+    if (!upstream.ok || !upstream.body) {
       const payload = await readJson(upstream);
-      return sendProviderError(res, upstream.status, payload);
+      return sendProviderError(res, upstream.status || 502, payload);
+    }
+
+    const contentType = (upstream.headers.get('content-type') || '').toLowerCase();
+    if (contentType.includes('json') || contentType.startsWith('text/')) {
+      const payload = await readJson(upstream);
+      return res.status(502).json({ error: payload?.error?.message || payload?.message || 'Penyedia mengembalikan pesan error, bukan file media. Cari media lagi.' });
+    }
+
+    const stream = Readable.fromWeb(upstream.body);
+    const iterator = stream[Symbol.asyncIterator]();
+    const first = await iterator.next();
+    if (first.done) return res.status(502).json({ error: 'File media kosong dari penyedia.' });
+    const head = Buffer.from(first.value).subarray(0, 16);
+    const isMp4 = head.length >= 8 && head.toString('ascii', 4, 8) === 'ftyp';
+    const isMp3 = head.length >= 3 && (head.toString('ascii', 0, 3) === 'ID3' || (head[0] === 0xff && (head[1] & 0xe0) === 0xe0));
+    if (type === 'mp3' ? !isMp3 : !isMp4) {
+      await iterator.return?.();
+      return res.status(502).json({ error: 'Respons penyedia bukan file MP4 yang valid. Silakan cari media lagi.' });
     }
 
     res.statusCode = 200;
     res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('Content-Type', upstream.headers.get('content-type') || (type === 'mp3' ? 'audio/mpeg' : 'video/mp4'));
+    res.setHeader('Content-Type', type === 'mp3' ? 'audio/mpeg' : 'video/mp4');
     res.setHeader('Content-Disposition', `attachment; filename="ssave-${type}.${type === 'mp3' ? 'mp3' : 'mp4'}"`);
     const length = upstream.headers.get('content-length');
     if (length) res.setHeader('Content-Length', length);
-    if (!upstream.body) return res.end();
-    Readable.fromWeb(upstream.body).pipe(res);
+    res.write(first.value);
+    for await (const chunk of { [Symbol.asyncIterator]: () => iterator }) res.write(chunk);
+    res.end();
   } catch (error) {
-    return res.status(502).json({ error: error.message || 'Gagal mengunduh media dari Ssave.' });
+    if (!res.headersSent) return res.status(502).json({ error: error.message || 'Gagal mengunduh media dari Ssave.' });
+    res.destroy(error);
   }
 }
 
