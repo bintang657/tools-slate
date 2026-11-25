@@ -842,3 +842,40 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
  .nexus-header .menu-toggle{width:38px;height:38px;flex-basis:38px}
 }
 @media(prefers-reduced-motion:reduce){.music-panel-content{animation:none}}
+
+/* V13 — keep the information menu pinned to the upper-right; lock hero media to its frame */
+.nexus-header .menu-toggle{
+  margin-left:auto !important;
+  margin-right:0 !important;
+  align-self:flex-start;
+  position:relative;
+  z-index:5;
+}
+.nexus-header .music-panel-toggle{align-self:flex-start;flex-shrink:0}
+.nexus-hero{width:100%;margin-inline:-26px;}
+.nexus-hero .hero-art{
+  position:relative;
+  width:100%;
+  height:auto;
+  aspect-ratio:16 / 9;
+  min-height:0;
+  max-height:none;
+  overflow:hidden;
+}
+.nexus-hero .hero-video{
+  position:absolute;
+  inset:0;
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center center;
+}
+@media(max-width:700px){
+  .nexus-header .menu-toggle{margin-left:auto !important;align-self:flex-start}
+  .nexus-hero{margin-inline:-16px}
+  .nexus-hero .hero-art{aspect-ratio:16 / 9;min-height:0}
+}
+@media(max-width:390px){
+  .nexus-header .menu-toggle{margin-left:auto !important}
+}
