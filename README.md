@@ -83,3 +83,7 @@ The included `vercel.json` provides SPA fallback routing and the certificate tra
 - crt.sh: public Certificate Transparency search. Results are certificate log entries, not a live TLS validation.
 
 No API keys are embedded in this frontend. Public APIs may impose CORS, rate limits, availability, or usage restrictions. Browser-based tools require an internet connection. Security Lab tools are limited to passive lookups and local analysis.
+
+
+## Cinematic interface update
+The interface uses an editorial creative-tech direction: sculptural CSS 3D hero, tactile mineral surfaces, restrained motion, cinematic modal transitions, responsive layouts, and reduced-motion support. The visual direction is original to Tools Slate and inspired by the broad design language of immersive creative libraries.
