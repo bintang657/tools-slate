@@ -45,3 +45,23 @@ The integration supports public TikTok and Instagram links. Private, deleted, ag
 `SOCIAL_DOWNLOADER_PROVIDER` defaults to `ssave`. The API handler is structured around a provider adapter so another service can be added later. Knightvision is not enabled yet because its authenticated API contract and access requirements have not been verified; do not set the variable to `knightvision` until that adapter is implemented.
 
 Never put provider secrets in frontend source code or a `VITE_` variable.
+
+
+## Music player setup
+
+1. Place MP3 files in `public/media/`.
+2. Edit `public/media/playlist.json` and add one object per track:
+
+```json
+{
+  "tracks": [
+    {
+      "title": "Judul Lagu",
+      "artist": "Nama Artis",
+      "src": "/media/nama-file.mp3"
+    }
+  ]
+}
+```
+
+The top-left play control starts or pauses the selected track. The header displays its title and an animated visualizer; the dock provides mute, volume, pause/play, and next-track controls. The repository intentionally ships with an empty playlist because no audio files were supplied.
