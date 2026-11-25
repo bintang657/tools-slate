@@ -1,9 +1,9 @@
 {
   "tracks": [
     {
-      "title": "Wonderwall",
-      "artist": "Oasis",
-      "src": "/media/oasis.mp3"
+      "title": "Contoh Lagu",
+      "artist": "Nama Artis",
+      "src": "/media/contoh-lagu.mp3"
     }
   ]
 }
