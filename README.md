@@ -65,3 +65,7 @@ Never put provider secrets in frontend source code or a `VITE_` variable.
 ```
 
 The top-left play control starts or pauses the selected track. The header displays its title and an animated visualizer; the dock provides mute, volume, pause/play, and next-track controls. The repository intentionally ships with an empty playlist because no audio files were supplied.
+
+## V12 mobile layout
+
+The music player starts collapsed. Tap the music-note button at the upper-left to open or close its controls. The hero frame is now 16:9 and full width, with the visitor panel attached edge-to-edge. See `UPGRADE-V12.txt` for the change log and build-validation status.
