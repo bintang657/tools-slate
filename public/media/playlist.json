@@ -1,3 +1,9 @@
 {
-  "tracks": [tools-slate/publik/media/oasis.mp3]
+  "tracks": [
+    {
+      "title": "Oasis",
+      "artist": "Music Player",
+      "src": "/media/oasis.mp3"
+    }
+  ]
 }
