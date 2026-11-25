@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
-  Search, Menu, X, ArrowUpRight, Sparkles, Code2, Type, Hash, CloudSun,
+  Search, Menu, X, VolumeX, ArrowUpRight, Sparkles, Code2, Type, Hash, CloudSun,
   Coins, QrCode, Braces, Link2, Clock3, Palette, Calculator, Regex, FileText,
   Copy, Download, Zap, ShieldCheck, ExternalLink, RefreshCw, Moon,
   Sun, Star, Globe2, Network, KeyRound, Fingerprint, ScanSearch, LockKeyhole,
@@ -51,14 +51,18 @@ const categoryFor = (tool) => {
 function App(){
   const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false)
   const [menuOpen,setMenuOpen]=useState(false), [infoPage,setInfoPage]=useState(null), [playing,setPlaying]=useState(false), [trackIndex,setTrackIndex]=useState(0)
-  const [tracks,setTracks]=useState([])
+  const [tracks,setTracks]=useState([]), [volume,setVolume]=useState(0.72), [muted,setMuted]=useState(false)
   const audioRef=useRef(null)
-  useEffect(()=>{let active=true;fetch('/media/playlist.json').then(r=>{if(!r.ok)throw new Error('playlist unavailable');return r.json()}).then(data=>{if(active)setTracks(Array.isArray(data.tracks)?data.tracks.filter(t=>t&&typeof t.src==='string'):[])}).catch(()=>{if(active)setTracks([])});return()=>{active=false}},[])
+  useEffect(()=>{let active=true;fetch('/media/playlist.json').then(r=>{if(!r.ok)throw new Error('playlist unavailable');return r.json()}).then(data=>{if(active)setTracks(Array.isArray(data.tracks)?data.tracks.filter(t=>t&&typeof t.src==='string'&&t.src.trim()):[])}).catch(()=>{if(active)setTracks([])});return()=>{active=false}},[])
   const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
   const [onlyFav,setOnlyFav]=useState(false)
   const searchRef=useRef(null)
-  const currentTrack=tracks[trackIndex]
-  useEffect(()=>{if(!audioRef.current||!currentTrack)return;audioRef.current.src=currentTrack.src;if(playing)audioRef.current.play().catch(()=>setPlaying(false));else audioRef.current.pause()},[currentTrack,playing])
+  const currentTrack=tracks.length?tracks[trackIndex%tracks.length]:null
+  useEffect(()=>{const audio=audioRef.current;if(!audio)return;audio.volume=volume;audio.muted=muted},[volume,muted])
+  useEffect(()=>{const audio=audioRef.current;if(!audio)return;if(!currentTrack){audio.pause();audio.removeAttribute('src');audio.load();setPlaying(false);return}audio.src=currentTrack.src;audio.load();if(playing)audio.play().catch(()=>setPlaying(false));else audio.pause()},[currentTrack])
+  const togglePlayback=async()=>{const audio=audioRef.current;if(!audio||!currentTrack)return;if(playing){audio.pause();setPlaying(false);return}try{await audio.play();setPlaying(true)}catch{setPlaying(false)}}
+  const nextTrack=()=>{if(!tracks.length)return;setTrackIndex(i=>(i+1)%tracks.length)}
+  const handleVolume=()=>{if(muted||volume===0){setMuted(false);setVolume(v=>v===0?0.72:v)}else setMuted(true)}
   useEffect(()=>{
     const onKeyDown=(event)=>{
       if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();searchRef.current?.focus()}
@@ -71,10 +75,20 @@ function App(){
   const tabs=[['All',Grid2X2],['Downloader',DownloadCloud],['Maker',WandSparkles],['Tools',Wrench]]
   return <div className={`app-shell ${dark?'theme-dark':'theme-light'} nexus-theme`}>
     <header className="nexus-header">
-      <button className="info-trigger" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Menu informasi">{menuOpen?<X/>:<Compass/>}</button>
-      <div className="header-info"><strong>Menu Informasi</strong><span>About Dev · Report Bug · Saluran WhatsApp</span></div>
-      <div className="audio-dock"><AudioLines/><button title="Volume" disabled={!tracks.length}><Volume2 size={17}/></button><button title={playing?"Pause":"Putar musik"} disabled={!tracks.length} onClick={()=>setPlaying(!playing)}>{playing?<span className="pause-mark">Ⅱ</span>:<Play size={17}/>}</button><button title="Lagu berikutnya" disabled={!tracks.length} onClick={()=>setTrackIndex(i=>(i+1)%tracks.length)}><SkipForward size={17}/></button><audio ref={audioRef} onEnded={()=>setTrackIndex(i=>(i+1)%tracks.length)} /></div>
-      <button className="menu-toggle" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Buka menu">{menuOpen?<X/>:<Menu/>}</button>
+      <button className={`info-trigger music-trigger ${playing?'is-playing':''}`} onClick={togglePlayback} aria-label={playing?'Jeda musik':'Putar musik'} title={playing?'Jeda musik':'Putar musik'} disabled={!currentTrack}>{playing?<AudioLines/>:<Play/>}</button>
+      <div className="header-info music-track-info">
+        <strong>{currentTrack?.title||'Music Player'}</strong>
+        <span>{currentTrack?currentTrack.artist||'Unknown artist':'Tambahkan lagu ke public/media/playlist.json'}</span>
+        <div className={`music-visualizer ${playing?'active':''}`} aria-label={playing?'Musik sedang diputar':'Musik berhenti'}>{Array.from({length:24},(_,i)=><i key={i} style={{'--bar':`${8+(i*17)%19}px`}}/>)}</div>
+      </div>
+      <div className="audio-dock" aria-label="Kontrol pemutar musik">
+        <button title={muted?'Aktifkan suara':'Matikan suara'} onClick={handleVolume} disabled={!currentTrack} aria-label={muted?'Aktifkan suara':'Matikan suara'}>{muted||volume===0?<VolumeX size={17}/>:<Volume2 size={17}/>}</button>
+        <input className="volume-range" aria-label="Volume musik" type="range" min="0" max="1" step="0.01" value={muted?0:volume} disabled={!currentTrack} onChange={e=>{setVolume(Number(e.target.value));setMuted(false)}} />
+        <button title={playing?'Pause':'Putar musik'} disabled={!currentTrack} onClick={togglePlayback} aria-label={playing?'Pause':'Putar musik'}>{playing?<span className="pause-mark">Ⅱ</span>:<Play size={17}/>}</button>
+        <button title="Lagu berikutnya" disabled={!currentTrack||tracks.length<2} onClick={nextTrack} aria-label="Lagu berikutnya"><SkipForward size={17}/></button>
+        <audio ref={audioRef} preload="none" onPlay={()=>setPlaying(true)} onEnded={()=>{if(tracks.length>1)nextTrack();else setPlaying(false)}} onError={()=>setPlaying(false)} />
+      </div>
+      <button className="menu-toggle" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Buka menu informasi">{menuOpen?<X/>:<Menu/>}</button>
     </header>
     {menuOpen&&<div className="info-panel"><div className="panel-heading"><div><b>NEXUS MENU</b><span>Informasi dan masukan</span></div><span className="online-pill"><i/> ONLINE</span></div>
       <button className="info-card" onClick={()=>{setMenuOpen(false);setInfoPage('about')}}><span className="info-icon"><UserRound/></span><span><b>About Dev</b><small>Profil developer dan kontak resmi.</small></span><ArrowUpRight/></button>
