@@ -1,6 +1,6 @@
 # Tools Slate
 
-Responsive 3D-inspired multi-tool workspace built with React + Vite. The interface includes a dark/light theme, animated 3D hero, searchable categories, favorites, and mobile navigation.
+A refined, responsive multi-tool workspace built with React + Vite. The interface uses a graphite/mineral visual system, restrained dimensional 3D details, layered dialogs, keyboard search, responsive navigation, favorites, and dark/light themes.
 
 ## Run locally
 
@@ -18,14 +18,22 @@ npm run preview
 
 ## Deploy to Vercel
 
-1. Push the contents of this folder to your GitHub repository.
+1. Push the contents of this folder to the GitHub repository.
 2. Import the repository in Vercel.
 3. Framework preset: **Vite**.
 4. Build command: `npm run build`.
 5. Output directory: `dist`.
 6. Deploy.
 
-The included `vercel.json` provides SPA fallback routing.
+The included `vercel.json` provides SPA fallback routing and the certificate transparency API proxy.
+
+## Interface details
+
+- Refined graphite interface with an optional light theme.
+- Layered 3D hero object, ambient depth, subtle motion, and responsive tool cards.
+- Search shortcut: `Ctrl + K` / `⌘ + K`; `Esc` closes an open tool dialog.
+- Accessible focus states and dialog semantics.
+- Mobile-first category scrolling and responsive tool layouts.
 
 ## Included tools
 
@@ -66,12 +74,12 @@ The included `vercel.json` provides SPA fallback routing.
 
 ## API notes
 
-- Open-Meteo geocoding + forecast: no API key for the public endpoint; review provider terms and attribution requirements.
+- Open-Meteo geocoding + forecast: public endpoint; no API key configured.
 - Frankfurter API v2: public reference exchange rates, not trading quotes.
 - QRServer: QR image endpoint.
-- ipwho.is: public IP geolocation endpoint; free tier has request limits. The API provider receives the queried IP.
+- ipwho.is: public IP geolocation endpoint; provider receives the queried IP.
 - Google Public DNS JSON API: DNS-over-HTTPS lookup endpoint.
-- Have I Been Pwned Pwned Passwords: only the first 5 characters of the locally computed SHA-1 hash are sent. The full password and full hash are not sent. This is a k-anonymity range lookup.
+- Have I Been Pwned Pwned Passwords: only the first 5 characters of the locally computed SHA-1 hash are sent.
 - crt.sh: public Certificate Transparency search. Results are certificate log entries, not a live TLS validation.
 
-No API keys are embedded in this frontend. Public APIs may impose CORS, rate limits, availability, or usage restrictions that can change independently of this project. Browser-based tools require an internet connection. Security Lab tools are limited to passive lookups and local analysis.
+No API keys are embedded in this frontend. Public APIs may impose CORS, rate limits, availability, or usage restrictions. Browser-based tools require an internet connection. Security Lab tools are limited to passive lookups and local analysis.
