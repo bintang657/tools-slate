@@ -801,3 +801,44 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
  .visitor-avatar{width:54px;height:54px;flex-basis:54px}
 }
 @media(prefers-reduced-motion:reduce){.music-visualizer.active i{animation:none;height:6px}}
+
+/* V12: collapsed music player + full-bleed hero/profile frame */
+.nexus-header{height:68px;min-height:68px;padding-inline:max(12px,calc((100vw - 1180px)/2));gap:10px}
+.music-panel-toggle{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border:1px solid #1d5278;border-radius:14px;background:linear-gradient(145deg,#102943,#09182a);color:#a8e8ff;box-shadow:0 7px 22px #008ed51a;cursor:pointer;transition:.2s}
+.music-panel-toggle svg{width:21px;height:21px}
+.music-panel-toggle:hover,.music-panel-toggle.active{border-color:#55cfff;background:#123858;box-shadow:0 0 20px #16a9ed35}
+.music-panel-content{display:flex;align-items:center;gap:12px;flex:1;min-width:0;animation:musicPanelIn .22s ease-out both}
+.music-panel-content .header-info{min-width:0}
+.music-panel-content .audio-dock{margin-left:auto}
+@keyframes musicPanelIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.nexus-header .menu-toggle{margin-left:auto;width:48px;height:48px;flex:0 0 48px}
+.nexus-hero{margin-inline:-26px}
+.hero-art{width:100%;aspect-ratio:16/9;min-height:0;max-height:none;height:auto;border-radius:0;}
+.visitor-panel{width:auto;margin:0 -26px 28px;border-radius:0 0 26px 26px;min-height:156px}
+@media(max-width:700px){
+ .nexus-header{height:auto;min-height:64px;padding:9px 12px;gap:9px}
+ .music-panel-toggle{width:42px;height:42px;flex-basis:42px}
+ .music-panel-content{gap:7px}
+ .music-panel-content .info-trigger{width:38px;height:38px;flex:0 0 38px;border-radius:12px}
+ .music-panel-content .header-info strong{font-size:11px}
+ .music-panel-content .header-info span{font-size:8px;max-width:125px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .music-panel-content .music-visualizer{height:11px}
+ .music-panel-content .music-visualizer i{width:2px}
+ .music-panel-content .audio-dock{height:40px;gap:2px;padding:3px;border-radius:14px;margin-left:auto}
+ .music-panel-content .audio-dock button{width:25px;height:32px;flex-basis:25px;border-radius:9px}
+ .music-panel-content .audio-dock .volume-range{width:30px}
+ .nexus-header .menu-toggle{width:42px;height:42px;flex-basis:42px;margin:0;border-radius:13px}
+ .nexus-main{padding-inline:16px}
+ .nexus-hero{margin-inline:-16px}
+ .hero-art{aspect-ratio:16/9;min-height:0;max-height:none;border-radius:0}
+ .visitor-panel{margin:0 -16px 24px;padding:19px 18px;min-height:150px;border-radius:0 0 20px 20px}
+}
+@media(max-width:390px){
+ .nexus-header{padding-inline:8px;gap:6px}
+ .music-panel-content{gap:5px}
+ .music-panel-content .header-info span{max-width:88px}
+ .music-panel-content .audio-dock .volume-range{width:23px}
+ .music-panel-content .audio-dock button{width:23px;flex-basis:23px}
+ .nexus-header .menu-toggle{width:38px;height:38px;flex-basis:38px}
+}
+@media(prefers-reduced-motion:reduce){.music-panel-content{animation:none}}
