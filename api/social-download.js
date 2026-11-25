@@ -92,8 +92,9 @@ async function handleExtract(req, res) {
 async function handleDownload(req, res) {
   const id = typeof req.query?.id === 'string' ? req.query.id.trim() : '';
   const type = typeof req.query?.type === 'string' ? req.query.type : 'hd';
-  // Ssave issues opaque ssv_ IDs. Keep the prefix check, but do not assume token length.
-  if (!/^ssv_[A-Za-z0-9_-]+$/.test(id) || id.length > 512 || !DOWNLOAD_TYPES.has(type)) {
+  // Treat provider IDs as opaque: SSave may change their prefix/character set.
+  // Reject only empty/oversized values and control characters; do not require an ssv_ prefix.
+  if (!id || id.length > 512 || /[\u0000-\u001F\u007F]/.test(id) || !DOWNLOAD_TYPES.has(type)) {
     return res.status(400).json({ error: 'Token unduhan tidak valid atau sudah hilang. Cari media lagi.' });
   }
 
