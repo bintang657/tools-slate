@@ -1,9 +1,3 @@
 {
-  "tracks": [
-    {
-      "title": "Contoh Lagu",
-      "artist": "Nama Artis",
-      "src": "/media/contoh-lagu.mp3"
-    }
-  ]
+  "tracks": []
 }
