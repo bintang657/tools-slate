@@ -36,9 +36,7 @@ const tools = [
   { id:'breach', name:'Password Exposure Check', desc:'Periksa hash password dengan k-anonymity.', category:'Security Lab', icon:Fingerprint, tag:'API' },
   { id:'urlscan', name:'URL Security Analyzer', desc:'Analisis skema, hostname, port, dan indikator URL.', category:'Security Lab', icon:ScanSearch },
   { id:'ssl', name:'Certificate Transparency', desc:'Cari catatan sertifikat TLS publik untuk domain.', category:'Security Lab', icon:LockKeyhole, tag:'API' },
-  { id:'terabox', name:'TeraBox Downloader', desc:'Tempat fitur unduh file dari tautan TeraBox.', category:'Downloader', icon:DownloadCloud, tag:'Soon', comingSoon:true },
-  { id:'instagram', name:'Instagram Media', desc:'Tempat fitur media Instagram akan ditambahkan.', category:'Downloader', icon:Video, tag:'Soon', comingSoon:true },
-  { id:'tiktok', name:'TikTok Media', desc:'Tempat fitur video dan audio TikTok akan ditambahkan.', category:'Downloader', icon:Music2, tag:'Soon', comingSoon:true },
+  { id:'socialdownloader', name:'Social Media Downloader', desc:'Unduh video publik TikTok dan Instagram.', category:'Downloader', icon:DownloadCloud, tag:'API' },
 ]
 const categories = ['All','Downloader','Maker','Tools']
 const categoryFor = (tool) => {
@@ -172,6 +170,35 @@ function ToolModal({tool,onClose}){
  {tool.id==='markdown'&&<div className="markdown-preview"><div className="output-head"><span>LIVE PREVIEW</span></div><div dangerouslySetInnerHTML={{__html:markdownLite(value)}}/></div>}
  </div></section></div>
 }
+function SocialDownloaderModal({onClose}){
+ const [url,setUrl]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[data,setData]=useState(null)
+ const submit=async()=>{
+  setError('');setData(null)
+  let parsed;try{parsed=new URL(url.trim())}catch{setError('Masukkan URL postingan yang valid.');return}
+  const host=parsed.hostname.toLowerCase().replace(/^www\./,'')
+  const platforms=[['tiktok.com','tiktok'],['instagram.com','instagram']]
+  const match=platforms.find(([domain])=>host===domain||host.endsWith(`.${domain}`))
+  if(!match){setError('Untuk saat ini hanya tautan TikTok dan Instagram yang didukung.');return}
+  setBusy(true)
+  try{
+   const response=await fetch('/api/social-download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:parsed.href,platform:match[1]})})
+   const body=await response.json().catch(()=>({}))
+   if(!response.ok)throw new Error(body.error||`API error (${response.status}).`)
+   if(!Array.isArray(body.media)||!body.media.length)throw new Error('API tidak mengembalikan file yang bisa diunduh.')
+   setData(body)
+  }catch(e){setError(e.message||'Gagal mengambil media. Coba lagi.')}
+  finally{setBusy(false)}
+ }
+ return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal social-downloader-modal" role="dialog" aria-modal="true" aria-labelledby="social-downloader-title">
+  <div className="modal-head"><div className="modal-title"><span className="tool-icon"><DownloadCloud size={20}/></span><div><h2 id="social-downloader-title">Social Media Downloader</h2><p>TikTok · Instagram</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Close"><X/></button></div>
+  <div className="modal-body"><label className="downloader-label" htmlFor="social-url">Link postingan publik</label><input id="social-url" className="single-input" value={url} onChange={e=>setUrl(e.target.value)} onKeyDown={e=>e.key==='Enter'&&!busy&&submit()} placeholder="Tempel link video / reel di sini..." autoComplete="url"/>
+   <p className="api-note"><Globe2 size={13}/> Menggunakan Ssave Open API gratis. Batas penyedia: 10 ekstraksi dan 50 unduhan per hari per IP, reset 00.00 UTC. Karena permintaan melewati server deployment, kuota dapat dipakai bersama oleh semua pengunjung. Konten privat atau dihapus tidak tersedia.</p>
+   <button className="run-btn" onClick={submit} disabled={busy||!url.trim()}>{busy?<RefreshCw className="spin" size={17}/>:<DownloadCloud size={17}/>} {busy?'Mengambil media...':'Cari media'}</button>
+   {error&&<div className="notice">{error}</div>}
+   {data&&<div className="social-result"><div className="social-result-heading"><b>{data.title||'Media ditemukan'}</b><span>{data.source||'Social media'}</span></div>{data.thumbnail&&<img className="social-thumbnail" src={data.thumbnail} alt="Thumbnail media" onError={e=>e.currentTarget.style.display='none'}/>}<div className="social-download-list">{data.media.map((item,i)=><a key={`${item.url}-${i}`} href={item.url} target="_blank" rel="noreferrer" className="social-download-link"><span><b>{item.label||item.quality||`File ${i+1}`}</b><small>{item.type||'Media'}{item.quality?` · ${item.quality}`:''}</small></span><span>Unduh <Download size={15}/></span></a>)}</div><small className="social-expiry-note">Token media berlaku sekitar 5–15 menit. Jika kedaluwarsa, cari media lagi. Kuota harian mengikuti IP server.</small></div>}
+  </div></section></div>
+}
+
 function OptionInput({label,value,setValue,placeholder}){return <div className="option-row"><label>{label}</label><input value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholder}/></div>}
 async function fetchJson(url){const r=await fetch(url);if(!r.ok)throw Error(`API error (${r.status}). Periksa input atau coba lagi.`);return r.json()}
 async function digestHex(algo,value){const bytes=new TextEncoder().encode(value),hash=await crypto.subtle.digest(algo,bytes);return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase()}

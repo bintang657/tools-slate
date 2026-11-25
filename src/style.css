@@ -567,3 +567,19 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 @keyframes infoFadeIn{from{opacity:0}to{opacity:1}}@keyframes infoModalIn{from{opacity:0;transform:translateY(18px) scale(.975);filter:blur(5px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
 @media(max-width:600px){.info-page-overlay{padding:10px;align-items:center}.info-page-modal{border-radius:20px;max-height:88vh}.info-page-head{padding:20px 18px 16px}.info-page-head h2{font-size:19px}.info-page-head p{font-size:11px}.info-page-links{padding:15px 15px 18px;gap:9px}.info-page-links>a{padding:12px;gap:12px}.info-page-icon{width:42px;height:42px;flex-basis:42px}.info-page-links b{font-size:12px}.info-page-links small{font-size:10px}.vip-page-content{padding:15px}.vip-page-plans{grid-template-columns:1fr;gap:9px}.vip-page-plan{display:grid;grid-template-columns:1fr auto;gap:7px 10px;padding:13px}.vip-page-plan>div{grid-column:1}.vip-page-plan strong{grid-column:2;grid-row:1;align-self:center;font-size:18px}.vip-page-plan button{grid-column:1/-1;width:100%;margin-top:3px}.vip-page-benefits{padding:14px}.vip-page-benefits ul{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.info-page-overlay,.info-page-modal{animation:none!important}.info-page-links>a,.vip-page-plan button{transition:none!important}}
+
+/* Social media downloader */
+.social-downloader-modal .modal-body{gap:13px}
+.downloader-label{font-size:12px;font-weight:700;color:#b9d8ed}
+.social-result{display:grid;gap:12px;margin-top:8px;padding:14px;border:1px solid #20547a;border-radius:16px;background:linear-gradient(145deg,#102942,#091728)}
+.social-result-heading{display:flex;justify-content:space-between;gap:10px;align-items:center;color:#e4f6ff;font-size:13px}
+.social-result-heading span{font-size:10px;color:#77cfff;text-transform:uppercase;letter-spacing:.7px}
+.social-thumbnail{width:100%;max-height:240px;object-fit:contain;border-radius:11px;background:#06111e}
+.social-download-list{display:grid;gap:8px}
+.social-download-link{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px;border:1px solid #24577d;border-radius:12px;background:#0b1d30;color:#e8f7ff;text-decoration:none}
+.social-download-link>span:first-child{display:grid;gap:4px;min-width:0}
+.social-download-link b{font-size:12px}
+.social-download-link small,.social-expiry-note{font-size:10px;color:#8ba9c2}
+.social-download-link>span:last-child{display:flex;align-items:center;gap:6px;flex:0 0 auto;color:#71dcff;font-size:11px;font-weight:800}
+.social-download-link:hover{border-color:#51c9fa;background:#102b45}
+.social-expiry-note{line-height:1.5}
