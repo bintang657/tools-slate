@@ -10,7 +10,7 @@ import {
   DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone
 } from 'lucide-react'
 import './style.css'
-import { tracks, heroVideo } from './media.js'
+import { heroVideo } from './media.js'
 
 const tools = [
   { id:'json', name:'JSON Formatter', desc:'Format, validate, dan minify data JSON.', category:'Developer', icon:Braces, tag:'Popular' },
@@ -52,12 +52,14 @@ const categoryFor = (tool) => {
 function App(){
   const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false)
   const [menuOpen,setMenuOpen]=useState(false), [infoPage,setInfoPage]=useState(null), [playing,setPlaying]=useState(false), [trackIndex,setTrackIndex]=useState(0)
+  const [tracks,setTracks]=useState([])
   const audioRef=useRef(null)
+  useEffect(()=>{let active=true;fetch('/media/playlist.json').then(r=>{if(!r.ok)throw new Error('playlist unavailable');return r.json()}).then(data=>{if(active)setTracks(Array.isArray(data.tracks)?data.tracks.filter(t=>t&&typeof t.src==='string'):[])}).catch(()=>{if(active)setTracks([])});return()=>{active=false}},[])
   const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
   const [onlyFav,setOnlyFav]=useState(false)
   const searchRef=useRef(null)
   const currentTrack=tracks[trackIndex]
-  useEffect(()=>{if(!audioRef.current||!currentTrack)return;audioRef.current.src=currentTrack.src;if(playing)audioRef.current.play().catch(()=>setPlaying(false))},[currentTrack,playing])
+  useEffect(()=>{if(!audioRef.current||!currentTrack)return;audioRef.current.src=currentTrack.src;if(playing)audioRef.current.play().catch(()=>setPlaying(false));else audioRef.current.pause()},[currentTrack,playing])
   useEffect(()=>{
     const onKeyDown=(event)=>{
       if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();searchRef.current?.focus()}
