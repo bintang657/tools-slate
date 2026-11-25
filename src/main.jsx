@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   Search, Menu, X, ArrowUpRight, Sparkles, Code2, Type, Hash, CloudSun,
@@ -40,6 +40,20 @@ function App(){
   const [active,setActive]=useState('All Tools'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false)
   const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
   const [onlyFav,setOnlyFav]=useState(false)
+  const searchRef=useRef(null)
+  useEffect(()=>{
+    const onKeyDown=(event)=>{
+      if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){
+        event.preventDefault();searchRef.current?.focus()
+      }
+      if(event.key==='Escape'){
+        if(selected)setSelected(null)
+        else if(document.activeElement===searchRef.current)searchRef.current.blur()
+      }
+    }
+    window.addEventListener('keydown',onKeyDown)
+    return ()=>window.removeEventListener('keydown',onKeyDown)
+  },[selected])
   const filtered=useMemo(()=>tools.filter(t=>(active==='All Tools'||t.category===active)&&(!onlyFav||favorites.includes(t.id))&&`${t.name} ${t.desc} ${t.category}`.toLowerCase().includes(query.toLowerCase())),[active,query,onlyFav,favorites])
   const toggleFav=(id)=>setFavorites(old=>{const next=old.includes(id)?old.filter(x=>x!==id):[...old,id];localStorage.setItem('tools-slate-favorites',JSON.stringify(next));return next})
   return <div className={`app-shell ${dark?'theme-dark':'theme-light'}`}>
@@ -54,7 +68,7 @@ function App(){
         <div className="hero-badge"><Sparkles size={14}/> YOUR DIGITAL WORKSPACE</div>
         <h1>Every tool.<br/><span>One smarter space.</span></h1>
         <p className="hero-copy">A carefully built collection of practical tools for development, productivity, and everyday security checks.</p>
-        <div className="search-wrap"><Search size={19}/><input value={query} onChange={e=>{setQuery(e.target.value);setActive('All Tools')}} placeholder="Search 23 tools..."/><kbd>⌘ K</kbd></div>
+        <div className="search-wrap"><Search size={19}/><input ref={searchRef} value={query} onChange={e=>{setQuery(e.target.value);setActive('All Tools')}} placeholder="Search 23 tools..." aria-label="Search tools"/><kbd>⌘ K</kbd></div>
         <div className="hero-meta"><span><i className="status-dot"/> {tools.length} tools ready</span><span><ShieldCheck size={15}/> Browser-first privacy</span><span><Zap size={15}/> Fast & lightweight</span></div>
       </div>
       <div className="hero-visual" aria-hidden="true"><div className="visual-ring ring-one"/><div className="visual-ring ring-two"/><div className="slate-cube"><div className="cube-face cube-front"><Command size={48}/><span>SLATE</span></div><div className="cube-face cube-side"/><div className="cube-face cube-top"/></div><div className="float-chip chip-a"><ShieldCheck size={16}/> Secure by design</div><div className="float-chip chip-b"><Activity size={16}/> Tools online</div></div>
@@ -106,7 +120,7 @@ function ToolModal({tool,onClose}){
  const download=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([output],{type:'text/plain'}));a.download=`tools-slate-${tool.id}-result.txt`;a.click();URL.revokeObjectURL(a.href)}
  const placeholders={json:'Tempel JSON di sini...',base64:'Masukkan teks atau Base64...',url:'Masukkan URL atau teks...',hash:'Masukkan teks untuk di-hash...',uuid:'Jumlah UUID (default 1)',regex:'Regular expression, contoh: \\w+',html:'Masukkan HTML atau teks...',text:'Ketik atau tempel teks...',words:'Tempel teks untuk dihitung...',timestamp:'Masukkan timestamp atau tanggal ISO...',unit:'Masukkan angka...',percentage:'Angka pertama...',color:'#6750A4',markdown:'## Halo!\nTulis **Markdown** di sini...',qr:'Masukkan teks atau URL...',weather:'Masukkan nama kota, contoh: Surabaya',currency:'Masukkan jumlah...',ip:'Kosongkan untuk IP publik kamu, atau masukkan IP...',dns:'Masukkan domain, contoh: example.org',jwt:'Tempel JWT di sini...',breach:'Masukkan password yang ingin diperiksa...',urlscan:'Masukkan URL, contoh: https://example.org',ssl:'Masukkan domain, contoh: example.org'}
  const isTextArea=!['uuid','timestamp','unit','percentage','color','weather','currency','ip','dns','ssl','breach'].includes(tool.id)
- return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal"><div className="modal-head"><div className="modal-title"><span className="tool-icon"><Icon size={20}/></span><div><h2>{tool.name}</h2><p>{tool.desc}</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Close"><X/></button></div>
+ return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal" role="dialog" aria-modal="true" aria-labelledby="tool-dialog-title"><div className="modal-head"><div className="modal-title"><span className="tool-icon"><Icon size={20}/></span><div><h2 id="tool-dialog-title">{tool.name}</h2><p>{tool.desc}</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Close"><X/></button></div>
  <div className="modal-body">{isTextArea?<textarea className="work-area" value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholders[tool.id]}/>:<input className="single-input" value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholders[tool.id]} type={tool.id==='breach'?'password':'text'} autoComplete="off"/>}
  {['json','base64','url','html','timestamp','unit','text','dns'].includes(tool.id)&&<div className="option-row"><label>{tool.id==='json'?'Output':tool.id==='timestamp'?'Convert':tool.id==='unit'?'Conversion':tool.id==='text'?'Text format':tool.id==='dns'?'DNS record':'Mode'}</label><select value={extra} onChange={e=>setExtra(e.target.value)}>{(tool.id==='json'?[['pretty','Pretty print'],['minify','Minify']]:tool.id==='timestamp'?[['to','Timestamp to date'],['from','Date to timestamp']]:tool.id==='unit'?[['km-mi','Kilometer → Mile'],['mi-km','Mile → Kilometer'],['kg-lb','Kilogram → Pound'],['lb-kg','Pound → Kilogram'],['c-f','Celsius → Fahrenheit'],['f-c','Fahrenheit → Celsius']]:tool.id==='text'?[['upper','UPPERCASE'],['lower','lowercase'],['title','Title Case'],['sentence','Sentence case'],['reverse','Reverse text'],['slug','URL slug']]:tool.id==='dns'?[['A','A'],['AAAA','AAAA'],['MX','MX'],['TXT','TXT'],['NS','NS'],['CNAME','CNAME'],['CAA','CAA'],['SOA','SOA']]:[['encode','Encode'],['decode','Decode']]).map(([v,l])=><option value={v} key={v}>{l}</option>)}</select></div>}
  {tool.id==='uuid'&&<OptionInput label="Jumlah UUID" value={extra} setValue={setExtra} placeholder="1"/>}
