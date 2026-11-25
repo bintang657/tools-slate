@@ -583,3 +583,6 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 .social-download-link>span:last-child{display:flex;align-items:center;gap:6px;flex:0 0 auto;color:#71dcff;font-size:11px;font-weight:800}
 .social-download-link:hover{border-color:#51c9fa;background:#102b45}
 .social-expiry-note{line-height:1.5}
+
+.social-download-link{width:100%;font:inherit;text-align:left;cursor:pointer}
+.social-download-link:disabled{opacity:.65;cursor:wait}

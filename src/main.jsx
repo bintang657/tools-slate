@@ -91,7 +91,7 @@ function App(){
         {filtered.length?<div className="tool-grid">{filtered.map(t=><ToolCard key={t.id} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
     </main>
-    {selected&&(selected.id==='socialdownloader'?<SocialDownloaderModal onClose={()=>setSelected(null)}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
+    {selected&&<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>}
   </div>
 }
 function InfoPage({page,onClose}){
@@ -171,7 +171,26 @@ function ToolModal({tool,onClose}){
  </div></section></div>
 }
 function SocialDownloaderModal({onClose}){
- const [url,setUrl]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[data,setData]=useState(null)
+ const [url,setUrl]=useState(''),[busy,setBusy]=useState(false),[downloading,setDownloading]=useState(''),[error,setError]=useState(''),[data,setData]=useState(null)
+ const downloadMedia=async(item)=>{
+  setError('');setDownloading(item.url)
+  try{
+   const response=await fetch(item.url)
+   const contentType=(response.headers.get('content-type')||'').toLowerCase()
+   if(!response.ok||contentType.includes('json')||contentType.startsWith('text/')){
+    const raw=await response.text().catch(()=> '')
+    let body={};try{body=raw?JSON.parse(raw):{}}catch{body={error:raw}}
+    throw new Error(body.error?.message||body.error||body.message||`Unduhan gagal (${response.status}). Cari media lagi.`)
+   }
+   const blob=await response.blob()
+   if(!blob.size)throw new Error('File kosong dari penyedia. Cari media lagi.')
+   const ext=item.type==='audio'?'mp3':'mp4'
+   const objectUrl=URL.createObjectURL(blob)
+   const a=document.createElement('a');a.href=objectUrl;a.download=`ssave-${item.quality==='HD'?'hd':ext}.${ext}`;document.body.appendChild(a);a.click();a.remove()
+   setTimeout(()=>URL.revokeObjectURL(objectUrl),30000)
+  }catch(e){setError(e.message||'Gagal mengunduh media. Coba cari media lagi.')}
+  finally{setDownloading('')}
+ }
  const submit=async()=>{
   setError('');setData(null)
   let parsed;try{parsed=new URL(url.trim())}catch{setError('Masukkan URL postingan yang valid.');return}
@@ -192,10 +211,10 @@ function SocialDownloaderModal({onClose}){
  return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal social-downloader-modal" role="dialog" aria-modal="true" aria-labelledby="social-downloader-title">
   <div className="modal-head"><div className="modal-title"><span className="tool-icon"><DownloadCloud size={20}/></span><div><h2 id="social-downloader-title">Social Media Downloader</h2><p>TikTok · Instagram</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Close"><X/></button></div>
   <div className="modal-body"><label className="downloader-label" htmlFor="social-url">Link postingan publik</label><input id="social-url" className="single-input" value={url} onChange={e=>setUrl(e.target.value)} onKeyDown={e=>e.key==='Enter'&&!busy&&submit()} placeholder="Tempel link video / reel di sini..." autoComplete="url"/>
-   <p className="api-note"><Globe2 size={13}/> Menggunakan Ssave Open API gratis. Batas penyedia: 10 ekstraksi dan 50 unduhan per hari per IP, reset 00.00 UTC. Karena permintaan melewati server deployment, kuota dapat dipakai bersama oleh semua pengunjung. Konten privat atau dihapus tidak tersedia.</p>
+   <p className="api-note"><Globe2 size={13}/> Kuota harian: 10 ekstraksi dan 50 unduhan per hari per IP, reset 00.00 UTC.</p>
    <button className="run-btn" onClick={submit} disabled={busy||!url.trim()}>{busy?<RefreshCw className="spin" size={17}/>:<DownloadCloud size={17}/>} {busy?'Mengambil media...':'Cari media'}</button>
    {error&&<div className="notice">{error}</div>}
-   {data&&<div className="social-result"><div className="social-result-heading"><b>{data.title||'Media ditemukan'}</b><span>{data.source||'Social media'}</span></div>{data.thumbnail&&<img className="social-thumbnail" src={data.thumbnail} alt="Thumbnail media" onError={e=>e.currentTarget.style.display='none'}/>}<div className="social-download-list">{data.media.map((item,i)=><a key={`${item.url}-${i}`} href={item.url} target="_blank" rel="noreferrer" className="social-download-link"><span><b>{item.label||item.quality||`File ${i+1}`}</b><small>{item.type||'Media'}{item.quality?` · ${item.quality}`:''}</small></span><span>Unduh <Download size={15}/></span></a>)}</div><small className="social-expiry-note">Token media berlaku sekitar 5–15 menit. Jika kedaluwarsa, cari media lagi. Kuota harian mengikuti IP server.</small></div>}
+   {data&&<div className="social-result"><div className="social-result-heading"><b>{data.title||'Media ditemukan'}</b><span>{data.source||'Social media'}</span></div>{data.thumbnail&&<img className="social-thumbnail" src={data.thumbnail} alt="Thumbnail media" onError={e=>e.currentTarget.style.display='none'}/>}<div className="social-download-list">{data.media.map((item,i)=><button type="button" key={`${item.url}-${i}`} onClick={()=>downloadMedia(item)} disabled={!!downloading} className="social-download-link"><span><b>{item.label||item.quality||`File ${i+1}`}</b><small>{item.type||'Media'}{item.quality?` · ${item.quality}`:''}</small></span><span>{downloading===item.url?'Mengunduh...':<>Unduh <Download size={15}/></>}</span></button>)}</div><small className="social-expiry-note">Token media berlaku sekitar 5–15 menit. Jika kedaluwarsa, cari media lagi. Kuota harian mengikuti IP server.</small></div>}
   </div></section></div>
 }
 
