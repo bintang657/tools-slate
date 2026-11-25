@@ -37,11 +37,12 @@ const tools = [
   { id:'urlscan', name:'URL Security Analyzer', desc:'Analisis skema, hostname, port, dan indikator URL.', category:'Security Lab', icon:ScanSearch },
   { id:'ssl', name:'Certificate Transparency', desc:'Cari catatan sertifikat TLS publik untuk domain.', category:'Security Lab', icon:LockKeyhole, tag:'API' },
   { id:'socialdownloader', name:'Social Media Downloader', desc:'Unduh video publik TikTok dan Instagram.', category:'Downloader', icon:DownloadCloud, tag:'API' },
+  { id:'lyricssearch', name:'Lyrics Finder', desc:'Cari lirik lagu berdasarkan judul dan nama artis.', category:'Online Tools', icon:Music2, tag:'API' },
 ]
 const categories = ['All','Downloader','Maker','Tools']
 const categoryFor = (tool) => {
   if (tool.category==='Downloader') return 'Downloader'
-  if (['weather','currency','ip','dns','ssl','breach'].includes(tool.id)) return 'Tools'
+  if (['weather','currency','ip','dns','ssl','breach','lyricssearch'].includes(tool.id)) return 'Tools'
   if (['qr','color','markdown'].includes(tool.id)) return 'Maker'
   if (['json','base64','url','hash','uuid','regex','html','text','words','timestamp','unit','percentage','jwt','urlscan'].includes(tool.id)) return 'Tools'
   return 'Downloader'
@@ -91,7 +92,7 @@ function App(){
         {filtered.length?<div className="tool-grid">{filtered.map(t=><ToolCard key={t.id} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
     </main>
-    {selected&&((selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
+    {selected&&((selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>:selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
   </div>
 }
 function InfoPage({page,onClose}){
@@ -215,6 +216,46 @@ function SocialDownloaderModal({onClose}){
    <button className="run-btn" onClick={submit} disabled={busy||!url.trim()}>{busy?<RefreshCw className="spin" size={17}/>:<DownloadCloud size={17}/>} {busy?'Mengambil media...':'Cari media'}</button>
    {error&&<div className="notice">{error}</div>}
    {data&&<div className="social-result"><div className="social-result-heading"><b>{data.title||'Media ditemukan'}</b><span>{data.source||'Social media'}</span></div>{data.thumbnail&&<img className="social-thumbnail" src={data.thumbnail} alt="Thumbnail media" onError={e=>e.currentTarget.style.display='none'}/>}<div className="social-download-list">{data.media.map((item,i)=><button type="button" key={`${item.url}-${i}`} onClick={()=>downloadMedia(item)} disabled={!!downloading} className="social-download-link"><span><b>{item.label||item.quality||`File ${i+1}`}</b><small>{item.type||'Media'}{item.quality?` · ${item.quality}`:''}</small></span><span>{downloading===item.url?'Mengunduh...':<>Unduh <Download size={15}/></>}</span></button>)}</div><small className="social-expiry-note">Token media berlaku sekitar 5–15 menit. Jika kedaluwarsa, cari media lagi. Kuota harian mengikuti IP server.</small></div>}
+  </div></section></div>
+}
+
+function LyricsSearchModal({onClose}){
+ const [track,setTrack]=useState(''),[artist,setArtist]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[matches,setMatches]=useState([]),[selected,setSelected]=useState(null),[mode,setMode]=useState('plain'),[copied,setCopied]=useState(false)
+ const search=async()=>{
+  setError('');setMatches([]);setSelected(null);setCopied(false)
+  if(!track.trim()||!artist.trim()){setError('Masukkan judul lagu dan nama artis.');return}
+  setBusy(true)
+  try{
+   const params=new URLSearchParams({track_name:track.trim(),artist_name:artist.trim()})
+   const response=await fetch(`https://lrclib.net/api/search?${params.toString()}`,{headers:{'X-User-Agent':'Tools Slate/2.1 (https://tools-slate.vercel.app)'}})
+   if(response.status===429)throw new Error('Terlalu banyak pencarian. Tunggu sebentar lalu coba lagi.')
+   if(!response.ok)throw new Error(`Layanan lirik merespons (${response.status}). Coba lagi nanti.`)
+   const rows=await response.json()
+   if(!Array.isArray(rows)||!rows.length)throw new Error('Lirik tidak ditemukan. Periksa judul atau nama artis.')
+   setMatches(rows.slice(0,20))
+  }catch(e){setError(e.message||'Gagal mencari lirik. Periksa koneksi internet.')}
+  finally{setBusy(false)}
+ }
+ const choose=async(row)=>{
+  setError('');setBusy(true);setCopied(false)
+  try{
+   const response=await fetch(`https://lrclib.net/api/get/${encodeURIComponent(row.id)}`,{headers:{'X-User-Agent':'Tools Slate/2.1 (https://tools-slate.vercel.app)'}})
+   if(!response.ok)throw new Error(`Lirik tidak dapat dimuat (${response.status}).`)
+   const full=await response.json();setSelected(full);setMode(full.plainLyrics?'plain':'synced')
+  }catch(e){setError(e.message||'Gagal memuat lirik.')}
+  finally{setBusy(false)}
+ }
+ const lyrics=selected?(mode==='synced'?(selected.syncedLyrics||selected.plainLyrics):(selected.plainLyrics||selected.syncedLyrics))||'Lirik tidak tersedia untuk lagu ini.':''
+ const copy=async()=>{try{await navigator.clipboard.writeText(lyrics);setCopied(true);setTimeout(()=>setCopied(false),1800)}catch{setError('Clipboard tidak tersedia di browser ini.')}}
+ const duration=(seconds)=>{if(!Number.isFinite(seconds))return '';const m=Math.floor(seconds/60),s=Math.round(seconds%60);return `${m}:${String(s).padStart(2,'0')}`}
+ return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal lyrics-modal" role="dialog" aria-modal="true" aria-labelledby="lyrics-title">
+  <div className="modal-head"><div className="modal-title"><span className="tool-icon"><Music2 size={20}/></span><div><h2 id="lyrics-title">Lyrics Finder</h2><p>Cari lirik berdasarkan judul dan artis</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Tutup"><X/></button></div>
+  <div className="modal-body"><div className="lyrics-fields"><label>Judul lagu<input className="single-input" value={track} onChange={e=>setTrack(e.target.value)} onKeyDown={e=>e.key==='Enter'&&!busy&&search()} placeholder="Contoh: Hati-Hati di Jalan"/></label><label>Nama artis<input className="single-input" value={artist} onChange={e=>setArtist(e.target.value)} onKeyDown={e=>e.key==='Enter'&&!busy&&search()} placeholder="Contoh: Tulus"/></label></div>
+   <p className="api-note"><Globe2 size={13}/> Pencarian menggunakan database lirik LRCLIB. Ketersediaan lagu bergantung pada database.</p>
+   <button className="run-btn" onClick={search} disabled={busy||!track.trim()||!artist.trim()}>{busy?<RefreshCw className="spin" size={17}/>:<Search size={17}/>} {busy?'Mencari...':'Cari lirik'}</button>
+   {error&&<div className="notice">{error}</div>}
+   {!!matches.length&&<div className="lyrics-matches"><div className="output-head"><span>HASIL PENCARIAN ({matches.length})</span></div>{matches.map(row=><button className={`lyrics-match ${selected?.id===row.id?'active':''}`} key={row.id} onClick={()=>choose(row)} disabled={busy}><span><b>{row.trackName||row.name||'Judul tidak tersedia'}</b><small>{row.artistName||'Artis tidak tersedia'}{row.albumName?` · ${row.albumName}`:''}</small></span><small>{duration(row.duration)}</small></button>)}</div>}
+   {selected&&<div className="lyrics-output"><div className="lyrics-selected"><div><b>{selected.trackName||selected.name}</b><small>{selected.artistName}{selected.albumName?` · ${selected.albumName}`:''}</small></div><a href="https://lrclib.net" target="_blank" rel="noreferrer">LRCLIB <ExternalLink size={12}/></a></div><div className="lyrics-actions">{selected.plainLyrics&&<button className={mode==='plain'?'active':''} onClick={()=>setMode('plain')}>Lirik biasa</button>}{selected.syncedLyrics&&<button className={mode==='synced'?'active':''} onClick={()=>setMode('synced')}>Dengan timestamp</button>}<button onClick={copy}><Copy size={13}/>{copied?'Tersalin':'Salin lirik'}</button></div><pre className="lyrics-text">{lyrics}</pre><small className="lyrics-credit">Metadata dan lirik disediakan oleh LRCLIB. Hasil dapat berbeda atau tidak tersedia untuk semua lagu.</small></div>}
   </div></section></div>
 }
 

@@ -586,3 +586,23 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 
 .social-download-link{width:100%;font:inherit;text-align:left;cursor:pointer}
 .social-download-link:disabled{opacity:.65;cursor:wait}
+
+/* Lyrics Finder */
+.lyrics-modal .modal-body{display:flex;flex-direction:column;gap:12px}
+.lyrics-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lyrics-fields label{display:flex;flex-direction:column;gap:7px;color:var(--text);font-size:11px;font-weight:700}
+.lyrics-fields .single-input{width:100%;box-sizing:border-box;margin:0;font:11px/1.5 inherit}
+.lyrics-matches,.lyrics-output{margin-top:5px;border:1px solid var(--line);border-radius:11px;overflow:hidden;background:#091522}
+.theme-light .lyrics-matches,.theme-light .lyrics-output{background:#f8fafc}
+.lyrics-match{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;padding:12px 14px;border:0;border-top:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer}
+.lyrics-match:hover,.lyrics-match.active{background:#168bd21a}
+.lyrics-match span{display:grid;gap:4px;min-width:0}.lyrics-match b{font-size:11px}.lyrics-match small{font-size:9px;color:var(--muted);overflow-wrap:anywhere}.lyrics-match>small{white-space:nowrap}
+.lyrics-selected{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:13px 14px;border-bottom:1px solid var(--line)}
+.lyrics-selected>div{display:grid;gap:4px;min-width:0}.lyrics-selected b{font-size:12px}.lyrics-selected small,.lyrics-credit{font-size:9px;color:var(--muted)}
+.lyrics-selected a{display:flex;align-items:center;gap:4px;color:var(--accent);font-size:10px;text-decoration:none;white-space:nowrap}
+.lyrics-actions{display:flex;flex-wrap:wrap;gap:7px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.lyrics-actions button{display:flex;align-items:center;gap:5px;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:transparent;color:var(--muted);font-size:9px;cursor:pointer}
+.lyrics-actions button.active{border-color:var(--accent);color:var(--accent);background:#168bd21a}
+.lyrics-text{margin:0;padding:15px;max-height:48vh;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text);font:11px/1.9 ui-monospace,SFMono-Regular,Menlo,monospace}
+.lyrics-credit{display:block;padding:0 14px 13px;line-height:1.6}
+@media(max-width:560px){.lyrics-fields{grid-template-columns:1fr}.lyrics-text{max-height:38vh}}
