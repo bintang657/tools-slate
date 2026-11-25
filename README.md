@@ -21,7 +21,7 @@ See `public/media/README.md` and `src/media.js`.
 
 - Optional banner video: `public/media/hero.mp4`
 - Optional banner image fallback: `public/media/hero.jpg`
-- Music: upload audio files into `public/media/`, then add their paths to the `tracks` array in `src/media.js`.
+- Music: upload audio files into `public/media/` and add their entries to `public/media/playlist.json`. The player fetches this playlist automatically; no React source edits are needed when adding tracks.
 
 The repository intentionally contains no bundled video or music. Add media you own or have permission to use.
 
