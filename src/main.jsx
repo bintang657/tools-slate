@@ -1,13 +1,16 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
   Search, Menu, X, ArrowUpRight, Sparkles, Code2, Type, Hash, CloudSun,
   Coins, QrCode, Braces, Link2, Clock3, Palette, Calculator, Regex, FileText,
   Copy, Download, Zap, ShieldCheck, ExternalLink, RefreshCw, Moon,
   Sun, Star, Globe2, Network, KeyRound, Fingerprint, ScanSearch, LockKeyhole,
-  Shield, HeartPulse, Activity, CheckCircle2, AlertTriangle
+  Shield, HeartPulse, Activity, CheckCircle2, AlertTriangle, AudioLines, Volume2, Play,
+  SkipForward, UserRound, Info, CircleHelp, MessageCircle, ShoppingCart, Compass,
+  DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone
 } from 'lucide-react'
 import './style.css'
+import { tracks, heroVideo } from './media.js'
 
 const tools = [
   { id:'json', name:'JSON Formatter', desc:'Format, validate, dan minify data JSON.', category:'Developer', icon:Braces, tag:'Popular' },
@@ -33,63 +36,87 @@ const tools = [
   { id:'breach', name:'Password Exposure Check', desc:'Periksa hash password dengan k-anonymity.', category:'Security Lab', icon:Fingerprint, tag:'API' },
   { id:'urlscan', name:'URL Security Analyzer', desc:'Analisis skema, hostname, port, dan indikator URL.', category:'Security Lab', icon:ScanSearch },
   { id:'ssl', name:'Certificate Transparency', desc:'Cari catatan sertifikat TLS publik untuk domain.', category:'Security Lab', icon:LockKeyhole, tag:'API' },
+  { id:'terabox', name:'TeraBox Downloader', desc:'Tempat fitur unduh file dari tautan TeraBox.', category:'Downloader', icon:DownloadCloud, tag:'Soon', comingSoon:true },
+  { id:'instagram', name:'Instagram Media', desc:'Tempat fitur media Instagram akan ditambahkan.', category:'Downloader', icon:Video, tag:'Soon', comingSoon:true },
+  { id:'tiktok', name:'TikTok Media', desc:'Tempat fitur video dan audio TikTok akan ditambahkan.', category:'Downloader', icon:Music2, tag:'Soon', comingSoon:true },
 ]
-const categories = ['All Tools','Developer','Security Lab','Image & Design','Text','Utilities','Online Tools']
-
-function App(){
-  const [active,setActive]=useState('All Tools'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false)
-  const [infoPage,setInfoPage]=useState(null)
-  const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
-  const [onlyFav,setOnlyFav]=useState(false)
-  const filtered=useMemo(()=>tools.filter(t=>(active==='All Tools'||t.category===active)&&(!onlyFav||favorites.includes(t.id))&&`${t.name} ${t.desc} ${t.category}`.toLowerCase().includes(query.toLowerCase())),[active,query,onlyFav,favorites])
-  const toggleFav=(id)=>setFavorites(old=>{const next=old.includes(id)?old.filter(x=>x!==id):[...old,id];localStorage.setItem('tools-slate-favorites',JSON.stringify(next));return next})
-  return <div className={`app-shell ${dark?'theme-dark':'theme-light'}`}>
-    <div className="ambient ambient-one"/><div className="ambient ambient-two"/>
-    <header className="topbar"><a className="brand brand-text" href="#top"><span>TOOLS <b>SLATE</b></span></a>
-      <nav className="top-links"><a href="#tools">Explore tools</a><a href="#security">Security lab</a><button onClick={()=>setInfoPage('about')}>About Dev</button><button onClick={()=>setInfoPage('vip')}>VIP Access</button><a href="https://whatsapp.com/channel/0029VbBmeKA002TCQOFuo61s" target="_blank" rel="noreferrer">Community <ExternalLink size={13}/></a></nav>
-      <div className="top-actions"><button className="theme-toggle" onClick={()=>setDark(!dark)} aria-label="Toggle theme">{dark?<Sun size={17}/>:<Moon size={17}/>}</button><button className="mobile-toggle" onClick={()=>setMobile(!mobile)} aria-label="Toggle navigation">{mobile?<X/>:<Menu/>}</button></div>
-    </header>
-    {mobile&&<div className="mobile-menu"><a href="#tools" onClick={()=>setMobile(false)}>Explore tools</a><a href="#security" onClick={()=>setMobile(false)}>Security lab</a><button onClick={()=>{setMobile(false);setInfoPage('about')}}>About Dev</button><button onClick={()=>{setMobile(false);setInfoPage('vip')}}>VIP Access</button><a href="https://whatsapp.com/channel/0029VbBmeKA002TCQOFuo61s" target="_blank" rel="noreferrer">Community</a></div>}
-    <main id="top">
-      <section className="hero"><div className="hero-orbit orbit-a"/><div className="hero-orbit orbit-b"/><div className="hero-content">
-        <div className="hero-badge"><Sparkles size={14}/> YOUR DIGITAL WORKSPACE</div>
-        <h1>Every tool.<br/><span>One smarter space.</span></h1>
-        <p className="hero-copy">A carefully built collection of practical tools for development, productivity, and everyday security checks.</p>
-        <div className="search-wrap"><Search size={19}/><input value={query} onChange={e=>{setQuery(e.target.value);setActive('All Tools')}} placeholder="Search 23 tools..."/><kbd>SEARCH</kbd></div>
-        <div className="hero-meta"><span><i className="status-dot"/> {tools.length} tools ready</span><span><ShieldCheck size={15}/> Browser-first privacy</span><span><Zap size={15}/> Fast & lightweight</span></div>
-      </div>
-      <div className="hero-visual" aria-hidden="true"><div className="visual-ring ring-one"/><div className="visual-ring ring-two"/><div className="slate-cube"><div className="cube-face cube-front"><span className="cube-wordmark">TOOLS SLATE</span></div><div className="cube-face cube-side"/><div className="cube-face cube-top"/></div><div className="float-chip chip-a"><ShieldCheck size={16}/> Secure by design</div><div className="float-chip chip-b"><Activity size={16}/> Tools online</div></div>
-      </section>
-      <section className="tools-section" id="tools"><div className="section-heading"><div><div className="eyebrow">THE TOOLBOX</div><h2>Explore all tools</h2><p>Small utilities, thoughtfully brought together.</p></div><span className="result-count">{filtered.length} / {tools.length} TOOLS</span></div>
-        <div className="toolbar"><div className="category-row">{categories.map(c=><button key={c} className={`category-pill ${active===c?'active':''}`} onClick={()=>{setActive(c);setOnlyFav(false)}}>{c}</button>)}</div><button className={`favorites-filter ${onlyFav?'active':''}`} onClick={()=>setOnlyFav(!onlyFav)}><Star size={14} fill={onlyFav?'currentColor':'none'}/> Favorites</button></div>
-        {filtered.length?<div className="tool-grid">{filtered.map(t=><ToolCard key={t.id} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>No tools found</h3><p>Try another keyword or category.</p><button onClick={()=>{setQuery('');setActive('All Tools');setOnlyFav(false)}}>Clear filters</button></div>}
-      </section>
-      <section className="security-strip" id="security"><div className="security-icon"><Shield size={23}/></div><div><div className="eyebrow">SECURITY LAB</div><h2>Understand your digital surface.</h2><p>Passive diagnostics, local decoders, and public-data lookups. No exploit or intrusion features.</p></div><button onClick={()=>{setActive('Security Lab');setOnlyFav(false);document.getElementById('tools')?.scrollIntoView({behavior:'smooth'})}}>Explore security tools <ArrowUpRight size={16}/></button></section>
-    </main>
-    <footer><a className="brand footer-brand brand-text" href="#top"><span>TOOLS <b>SLATE</b></span></a><span>Built for everyday productivity.</span><span>© {new Date().getFullYear()} Tools Slate</span></footer>
-    {selected&&<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>}
-    {infoPage&&<InfoModal page={infoPage} onClose={()=>setInfoPage(null)}/> }
-  </div>
+const categories = ['All','Downloader','Maker','Tools']
+const categoryFor = (tool) => {
+  if (tool.category==='Downloader') return 'Downloader'
+  if (['weather','currency','ip','dns','ssl','breach'].includes(tool.id)) return 'Tools'
+  if (['qr','color','markdown'].includes(tool.id)) return 'Maker'
+  if (['json','base64','url','hash','uuid','regex','html','text','words','timestamp','unit','percentage','jwt','urlscan'].includes(tool.id)) return 'Tools'
+  return 'Downloader'
 }
 
-function InfoModal({page,onClose}){
+function App(){
+  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false)
+  const [menuOpen,setMenuOpen]=useState(false), [infoPage,setInfoPage]=useState(null), [playing,setPlaying]=useState(false), [trackIndex,setTrackIndex]=useState(0)
+  const audioRef=useRef(null)
+  const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
+  const [onlyFav,setOnlyFav]=useState(false)
+  const searchRef=useRef(null)
+  const currentTrack=tracks[trackIndex]
+  useEffect(()=>{if(!audioRef.current||!currentTrack)return;audioRef.current.src=currentTrack.src;if(playing)audioRef.current.play().catch(()=>setPlaying(false))},[currentTrack,playing])
+  useEffect(()=>{
+    const onKeyDown=(event)=>{
+      if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();searchRef.current?.focus()}
+      if(event.key==='Escape'){if(infoPage)setInfoPage(null);else if(selected)setSelected(null);else if(menuOpen)setMenuOpen(false);else if(document.activeElement===searchRef.current)searchRef.current.blur()}
+    }
+    window.addEventListener('keydown',onKeyDown);return ()=>window.removeEventListener('keydown',onKeyDown)
+  },[selected,menuOpen,infoPage])
+  const filtered=useMemo(()=>tools.filter(t=>(active==='All'||categoryFor(t)===active)&&(!onlyFav||favorites.includes(t.id))&&`${t.name} ${t.desc} ${t.category}`.toLowerCase().includes(query.toLowerCase())),[active,query,onlyFav,favorites])
+  const toggleFav=(id)=>setFavorites(old=>{const next=old.includes(id)?old.filter(x=>x!==id):[...old,id];localStorage.setItem('tools-slate-favorites',JSON.stringify(next));return next})
+  const tabs=[['All',Grid2X2],['Downloader',DownloadCloud],['Maker',WandSparkles],['Tools',Wrench]]
+  return <div className={`app-shell ${dark?'theme-dark':'theme-light'} nexus-theme`}>
+    <header className="nexus-header">
+      <button className="info-trigger" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Menu informasi">{menuOpen?<X/>:<Compass/>}</button>
+      <div className="header-info"><strong>Menu Informasi</strong><span>About Dev · Report Bug · Saluran WhatsApp</span></div>
+      <div className="audio-dock"><AudioLines/><button title="Volume" disabled={!tracks.length}><Volume2 size={17}/></button><button title={playing?"Pause":"Putar musik"} disabled={!tracks.length} onClick={()=>setPlaying(!playing)}>{playing?<span className="pause-mark">Ⅱ</span>:<Play size={17}/>}</button><button title="Lagu berikutnya" disabled={!tracks.length} onClick={()=>setTrackIndex(i=>(i+1)%tracks.length)}><SkipForward size={17}/></button><audio ref={audioRef} onEnded={()=>setTrackIndex(i=>(i+1)%tracks.length)} /></div>
+      <button className="menu-toggle" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Buka menu">{menuOpen?<X/>:<Menu/>}</button>
+    </header>
+    {menuOpen&&<div className="info-panel"><div className="panel-heading"><div><b>NEXUS MENU</b><span>Informasi dan masukan</span></div><span className="online-pill"><i/> ONLINE</span></div>
+      <button className="info-card" onClick={()=>{setMenuOpen(false);setInfoPage('about')}}><span className="info-icon"><UserRound/></span><span><b>About Dev</b><small>Profil developer dan kontak resmi.</small></span><ArrowUpRight/></button>
+      <a className="info-card" href="https://whatsapp.com/channel/0029VbBmeKA002TCQOFuo61s" target="_blank" rel="noreferrer"><span className="info-icon"><CircleHelp/></span><span><b>Report Bug, Saran & Ide</b><small>Kirim masukan melalui saluran WhatsApp.</small></span><ExternalLink/></a>
+      <button className="info-card" onClick={()=>{setMenuOpen(false);setInfoPage('vip')}}><span className="info-icon"><Sparkles/></span><span><b>VIP Access</b><small>Lihat fitur, paket, dan harga akses VIP.</small></span><ArrowUpRight/></button>
+      <a className="info-card whatsapp" href="https://whatsapp.com/channel/0029VbBmeKA002TCQOFuo61s" target="_blank" rel="noreferrer"><span className="info-icon"><MessageCircle/></span><span><b>Komunitas</b><small>Gabung melalui saluran WhatsApp resmi.</small></span><ExternalLink/></a>
+    </div>}
+    {infoPage&&<InfoPage page={infoPage} onClose={()=>setInfoPage(null)}/> }
+    <main id="top" className="nexus-main">
+      <section className="nexus-hero"><div className="hero-art">{heroVideo&&<video className="hero-video" autoPlay muted loop playsInline onError={e=>{e.currentTarget.style.display="none"}}><source src={heroVideo} type="video/mp4"/></video>}<div className="hero-art-glow"/><div className="hero-art-copy"><span>TOOLS SLATE</span><small>YOUR DIGITAL SPACE</small></div></div></section>
+      <section className="visitor-panel"><div className="visitor-avatar"><UserRound/></div><div className="visitor-data"><div><Globe2/> <span>NEGARA</span> <b>Indonesia</b><Smartphone/> <span>DEVICE</span> <b>Web</b></div><div><Globe2/> <span>BROWSER</span> <b>Browser</b><AudioLines/> <span>STATUS</span> <b className="online-text">Online</b></div><div className="visitor-tags"><span className="visitor-chip"><Activity/> Tools aktif</span><span className="visitor-chip role-chip">Member</span></div></div></section>
+      <section className="tools-section nexus-tools" id="tools"><div className="nexus-toolbar"><div className="category-row">{tabs.map(([name,Icon])=><button key={name} className={`category-pill ${active===name?'active':''}`} onClick={()=>{setActive(name);setOnlyFav(false)}}><Icon size={17}/>{name}</button>)}</div></div>
+        <div className="section-heading nexus-section-heading"><div><h2><Grid2X2/> {active==='All'?'Semua Tools':active}</h2><p>Temukan tools yang kamu butuhkan.</p></div><span className="result-count">{filtered.length} TOOLS</span></div>
+        <div className="search-wrap nexus-search"><Search size={18}/><input ref={searchRef} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari tools..." aria-label="Cari tools"/></div>
+        {filtered.length?<div className="tool-grid">{filtered.map(t=><ToolCard key={t.id} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
+      </section>
+    </main>
+    {selected&&<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>}
+  </div>
+}
+function InfoPage({page,onClose}){
+ const email='slateeofficial@gmail.com'
+ const tiktok='https://www.tiktok.com/@lazzzimo?_r=1&_t=ZS-9BheaLX9L2y'
+ const wa='https://wa.me/6285798209865?s=t'
  const channel='https://whatsapp.com/channel/0029VbBmeKA002TCQOFuo61s'
- const wa='https://wa.me/6285798209865'
- const plans=[{name:'VIP 7 Hari',price:'Rp10.000',detail:'Akses fitur VIP selama 7 hari'},{name:'VIP 30 Hari',price:'Rp25.000',detail:'Akses fitur VIP selama 30 hari'},{name:'VIP Lifetime',price:'Rp75.000',detail:'Akses VIP tanpa batas masa aktif'}]
- const order=(plan)=>{const msg=encodeURIComponent(`Halo, saya ingin memesan ${plan.name} (${plan.price}) untuk Tools Slate. Mohon informasi pembayaran dan aktivasi.`);window.open(`${wa}?text=${msg}`,'_blank','noopener,noreferrer')}
- return <div className="modal-backdrop info-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="info-modal"><div className="modal-head"><div><div className="eyebrow">TOOLS SLATE / {page==='about'?'DEVELOPER':'VIP ACCESS'}</div><h2>{page==='about'?'About Developer':'VIP Features & Pricing'}</h2><p>{page==='about'?'Hubungi developer melalui kanal resmi.':'Pilih paket akses VIP yang sesuai.'}</p></div><button className="icon-btn" onClick={onClose} aria-label="Close"><X/></button></div>
- {page==='about'?<div className="info-list">
- <a className="info-link" href="mailto:slateeofficial@gmail.com"><span className="info-symbol">@</span><span><b>Email</b><small>slateeofficial@gmail.com</small></span><ArrowUpRight/></a>
- <a className="info-link" href="https://www.tiktok.com/@lazzzimo?_r=1&_t=ZS-9BheaLX9L2y" target="_blank" rel="noreferrer"><span className="info-symbol">♪</span><span><b>TikTok</b><small>@lazzzimo</small></span><ArrowUpRight/></a>
- <a className="info-link" href={wa} target="_blank" rel="noreferrer"><span className="info-symbol">WA</span><span><b>WhatsApp Developer</b><small>Chat langsung dengan developer</small></span><ArrowUpRight/></a>
- <a className="info-link" href={channel} target="_blank" rel="noreferrer"><span className="info-symbol">◉</span><span><b>Saluran WhatsApp</b><small>Info dan pembaruan Tools Slate</small></span><ArrowUpRight/></a>
- <a className="info-link" href={channel} target="_blank" rel="noreferrer"><span className="info-symbol">!</span><span><b>Report Bug, Saran & Ide</b><small>Kirim laporan melalui saluran WhatsApp</small></span><ArrowUpRight/></a>
- <a className="info-link" href={channel} target="_blank" rel="noreferrer"><span className="info-symbol">◎</span><span><b>Komunitas</b><small>Gabung melalui saluran WhatsApp</small></span><ArrowUpRight/></a>
- </div>:<div className="vip-content"><div className="vip-benefits"><h3>Yang termasuk dalam akses VIP</h3><ul><li>Akses ke fitur dan tools khusus VIP yang tersedia</li><li>Pembaruan fitur VIP selama masa aktif paket</li><li>Bantuan aktivasi melalui WhatsApp</li></ul><p className="vip-note">Ketersediaan fitur mengikuti versi Tools Slate. Paket dan harga di bawah adalah penawaran awal yang dapat diubah oleh developer.</p></div><div className="vip-plans">{plans.map(plan=><article className="vip-plan" key={plan.name}><div><h3>{plan.name}</h3><p>{plan.detail}</p></div><strong>{plan.price}</strong><button onClick={()=>order(plan)}>Pesan via WhatsApp <ArrowUpRight size={15}/></button></article>)}</div></div>}
+ const plans=[
+  {name:'VIP 7 Hari',price:'Rp10.000',detail:'Akses VIP untuk mencoba fitur premium selama 7 hari.'},
+  {name:'VIP 30 Hari',price:'Rp25.000',detail:'Akses VIP selama 30 hari dengan pembaruan fitur.'},
+  {name:'VIP Lifetime',price:'Rp75.000',detail:'Akses VIP satu kali pembayaran, selama layanan tersedia.'}
+ ]
+ const order=(plan)=>{const msg=encodeURIComponent(`Halo Slate, saya ingin memesan ${plan.name} (${plan.price}) untuk Tools Slate. Mohon informasi pembayaran dan aktivasi.`);window.open(`${wa}?text=${msg}`,'_blank','noopener,noreferrer')}
+ return <div className="info-page-overlay" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="info-page-modal" role="dialog" aria-modal="true" aria-label={page==='about'?'About Developer':'VIP Access'}>
+  <div className="info-page-head"><div><span className="info-page-kicker">TOOLS SLATE / {page==='about'?'DEVELOPER':'VIP ACCESS'}</span><h2>{page==='about'?'About Developer':'VIP Features & Pricing'}</h2><p>{page==='about'?'Hubungi developer melalui kanal resmi.':'Pilih paket akses VIP Tools Slate.'}</p></div><button className="info-page-close" onClick={onClose} aria-label="Tutup"><X/></button></div>
+  {page==='about'?<div className="info-page-links">
+   <a href={`mailto:${email}`}><span className="info-page-icon">@</span><span><b>Gmail</b><small>{email}</small></span><ArrowUpRight/></a>
+   <a href={tiktok} target="_blank" rel="noreferrer"><span className="info-page-icon">♪</span><span><b>TikTok</b><small>@lazzzimo</small></span><ExternalLink/></a>
+   <a href={wa} target="_blank" rel="noreferrer"><span className="info-page-icon"><MessageCircle/></span><span><b>WhatsApp Developer</b><small>Chat langsung dengan developer</small></span><ExternalLink/></a>
+   <a href={channel} target="_blank" rel="noreferrer"><span className="info-page-icon"><AudioLines/></span><span><b>Saluran WhatsApp</b><small>Info dan pembaruan Tools Slate</small></span><ExternalLink/></a>
+  </div>:<div className="vip-page-content"><div className="vip-page-benefits"><b>Keuntungan VIP</b><ul><li>Akses ke fitur khusus VIP yang tersedia</li><li>Pembaruan fitur VIP selama masa aktif paket</li><li>Bantuan aktivasi melalui WhatsApp</li></ul><small>Fitur VIP mengikuti ketersediaan pada versi Tools Slate.</small></div><div className="vip-page-plans">{plans.map(plan=><article className="vip-page-plan" key={plan.name}><div><b>{plan.name}</b><small>{plan.detail}</small></div><strong>{plan.price}</strong><button onClick={()=>order(plan)}>Pesan akses VIP <ArrowUpRight size={15}/></button></article>)}</div></div>}
  </section></div>
 }
 
-function ToolCard({tool,onClick,favorite,onFavorite}){const Icon=tool.icon;return <article className="tool-card" onClick={onClick} onKeyDown={e=>e.key==='Enter'&&onClick()} tabIndex="0" role="button"><div className="card-top"><span className="tool-icon"><Icon size={20}/></span><div className="card-badges">{tool.tag&&<span className={`tag ${tool.tag==='API'?'api':''}`}>{tool.tag}</span>}<button className={`fav-btn ${favorite?'saved':''}`} onClick={e=>{e.stopPropagation();onFavorite()}} aria-label="Toggle favorite"><Star size={15} fill={favorite?'currentColor':'none'}/></button></div></div><h3>{tool.name}</h3><p>{tool.desc}</p><span className="card-open">Open tool <ArrowUpRight size={15}/></span></article>}
+function ToolCard({tool,onClick,favorite,onFavorite}){const Icon=tool.icon;return <article className={`tool-card ${tool.comingSoon?'coming-soon':''}`} onClick={()=>!tool.comingSoon&&onClick()} onKeyDown={e=>e.key==='Enter'&&!tool.comingSoon&&onClick()} tabIndex={tool.comingSoon?-1:0} role="button"><div className="card-top"><span className="tool-icon"><Icon size={20}/></span><div className="card-badges">{tool.tag&&<span className={`tag ${tool.tag==='API'?'api':''}`}>{tool.tag}</span>}<button className={`fav-btn ${favorite?'saved':''}`} onClick={e=>{e.stopPropagation();onFavorite()}} aria-label="Toggle favorite"><Star size={15} fill={favorite?'currentColor':'none'}/></button></div></div><h3>{tool.name}</h3><p>{tool.desc}</p><span className="card-open">{tool.comingSoon?'Coming soon':'Open tool'} {!tool.comingSoon&&<ArrowUpRight size={15}/>}</span></article>}
 
 function ToolModal({tool,onClose}){
  const [value,setValue]=useState(''),[output,setOutput]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[extra,setExtra]=useState(''),[extra2,setExtra2]=useState(''),[result,setResult]=useState(null)
@@ -125,7 +152,7 @@ function ToolModal({tool,onClose}){
  const download=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([output],{type:'text/plain'}));a.download=`tools-slate-${tool.id}-result.txt`;a.click();URL.revokeObjectURL(a.href)}
  const placeholders={json:'Tempel JSON di sini...',base64:'Masukkan teks atau Base64...',url:'Masukkan URL atau teks...',hash:'Masukkan teks untuk di-hash...',uuid:'Jumlah UUID (default 1)',regex:'Regular expression, contoh: \\w+',html:'Masukkan HTML atau teks...',text:'Ketik atau tempel teks...',words:'Tempel teks untuk dihitung...',timestamp:'Masukkan timestamp atau tanggal ISO...',unit:'Masukkan angka...',percentage:'Angka pertama...',color:'#6750A4',markdown:'## Halo!\nTulis **Markdown** di sini...',qr:'Masukkan teks atau URL...',weather:'Masukkan nama kota, contoh: Surabaya',currency:'Masukkan jumlah...',ip:'Kosongkan untuk IP publik kamu, atau masukkan IP...',dns:'Masukkan domain, contoh: example.org',jwt:'Tempel JWT di sini...',breach:'Masukkan password yang ingin diperiksa...',urlscan:'Masukkan URL, contoh: https://example.org',ssl:'Masukkan domain, contoh: example.org'}
  const isTextArea=!['uuid','timestamp','unit','percentage','color','weather','currency','ip','dns','ssl','breach'].includes(tool.id)
- return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal"><div className="modal-head"><div className="modal-title"><span className="tool-icon"><Icon size={20}/></span><div><h2>{tool.name}</h2><p>{tool.desc}</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Close"><X/></button></div>
+ return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal" role="dialog" aria-modal="true" aria-labelledby="tool-dialog-title"><div className="modal-head"><div className="modal-title"><span className="tool-icon"><Icon size={20}/></span><div><h2 id="tool-dialog-title">{tool.name}</h2><p>{tool.desc}</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Close"><X/></button></div>
  <div className="modal-body">{isTextArea?<textarea className="work-area" value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholders[tool.id]}/>:<input className="single-input" value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholders[tool.id]} type={tool.id==='breach'?'password':'text'} autoComplete="off"/>}
  {['json','base64','url','html','timestamp','unit','text','dns'].includes(tool.id)&&<div className="option-row"><label>{tool.id==='json'?'Output':tool.id==='timestamp'?'Convert':tool.id==='unit'?'Conversion':tool.id==='text'?'Text format':tool.id==='dns'?'DNS record':'Mode'}</label><select value={extra} onChange={e=>setExtra(e.target.value)}>{(tool.id==='json'?[['pretty','Pretty print'],['minify','Minify']]:tool.id==='timestamp'?[['to','Timestamp to date'],['from','Date to timestamp']]:tool.id==='unit'?[['km-mi','Kilometer → Mile'],['mi-km','Mile → Kilometer'],['kg-lb','Kilogram → Pound'],['lb-kg','Pound → Kilogram'],['c-f','Celsius → Fahrenheit'],['f-c','Fahrenheit → Celsius']]:tool.id==='text'?[['upper','UPPERCASE'],['lower','lowercase'],['title','Title Case'],['sentence','Sentence case'],['reverse','Reverse text'],['slug','URL slug']]:tool.id==='dns'?[['A','A'],['AAAA','AAAA'],['MX','MX'],['TXT','TXT'],['NS','NS'],['CNAME','CNAME'],['CAA','CAA'],['SOA','SOA']]:[['encode','Encode'],['decode','Decode']]).map(([v,l])=><option value={v} key={v}>{l}</option>)}</select></div>}
  {tool.id==='uuid'&&<OptionInput label="Jumlah UUID" value={extra} setValue={setExtra} placeholder="1"/>}
