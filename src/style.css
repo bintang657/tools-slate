@@ -698,3 +698,41 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 @keyframes luxGlowBreathe{0%{transform:translate3d(-2%,0,0) scale(.96);opacity:.48}50%{transform:translate3d(2%,3%,0) scale(1.04);opacity:.78}100%{transform:translate3d(0,1%,0) scale(1);opacity:.58}}
 @media(max-width:700px){.nexus-theme .tool-card{animation:luxCardEnter .7s var(--motion-smooth) both,luxCardGradient 24s ease-in-out infinite alternate}.nexus-theme .tool-card:hover{transform:translateY(-2px) scale(1.002)}.hero-art:before{animation-duration:22s}}
 @media(prefers-reduced-motion:reduce){.nexus-theme:after,.nexus-header,.hero-art:before,.hero-art-glow,.hero-art-copy span,.nexus-section-heading h2,.nexus-theme .tool-card,.nexus-toolbar .category-pill.active,.nexus-theme .run-btn,.nexus-footer-card{animation:none!important}.nexus-theme .tool-card,.nexus-theme .tool-card *,.nexus-toolbar .category-pill,.social-download-link,.audio-dock button{transition:none!important}}
+
+/* Responsive refinement: comfortable phone layout (normal browser mode) */
+@media (max-width: 480px) {
+  .nexus-main { padding-inline: 16px; }
+  .nexus-hero { margin-inline: -16px; }
+  .nexus-header { padding-inline: 12px; gap: 9px; }
+  .header-info { min-width: 0; flex: 1 1 auto; }
+  .header-info span { max-width: 145px; }
+  .audio-dock { flex: 0 0 auto; }
+  .visitor-panel { margin: 0 2px; padding: 17px 15px; gap: 14px; }
+  .visitor-data { gap: 11px; }
+  .visitor-data > div { flex-wrap: wrap; row-gap: 6px; }
+  .visitor-data b { font-size: 11px; }
+  .visitor-data span { font-size: 9px; }
+  .visitor-chip { padding: 8px 11px; font-size: 9px !important; }
+  .nexus-toolbar { gap: 10px; }
+  .nexus-toolbar .category-row { display:flex; flex-wrap:nowrap; overflow-x:auto; gap:9px; padding:3px 1px 9px; scrollbar-width:none; }
+  .nexus-toolbar .category-row::-webkit-scrollbar { display:none; }
+  .nexus-toolbar .category-pill { flex:0 0 auto; min-width:108px; padding:12px 15px; font-size:12px; }
+  .nexus-section-heading { gap:12px; align-items:center; }
+  .nexus-section-heading h2 { font-size:clamp(21px,6vw,26px); letter-spacing:.2px; }
+  .nexus-section-heading .result-count { white-space:nowrap; font-size:9px; padding:9px 10px; }
+  .nexus-theme .search-wrap { width:100%; min-height:56px; margin:20px 0 22px; }
+  .nexus-theme .tool-grid { grid-template-columns:minmax(0,1fr); gap:14px; }
+  .nexus-theme .tool-card { min-height:156px; padding:19px 18px 17px; border-radius:20px; }
+  .nexus-theme .tool-card .tool-icon { width:48px; height:48px; border-radius:14px; }
+  .nexus-theme .tool-card .tool-icon svg { width:25px; height:25px; }
+  .nexus-theme .tool-card h3 { font-size:15px; margin:14px 0 6px; }
+  .nexus-theme .tool-card p { font-size:11px; line-height:1.65; min-height:0; margin-bottom:5px; }
+  .nexus-theme .tool-card .card-open { font-size:11px; padding-top:9px; }
+}
+@media (max-width: 360px) {
+  .nexus-main { padding-inline:13px; }
+  .nexus-hero { margin-inline:-13px; }
+  .header-info span { max-width:108px; }
+  .audio-dock button { width:22px; }
+  .nexus-toolbar .category-pill { min-width:98px; padding-inline:12px; }
+}
