@@ -59,14 +59,15 @@ async function handleExtract(req, res) {
     // Provider adapter: Ssave aktif. Knightvision dapat ditambahkan setelah akses dan kontrak API resminya diverifikasi.
     if (PROVIDER !== 'ssave') return res.status(503).json({ error: 'Provider downloader belum dikonfigurasi.' });
     const payload = await extractWithSsave(url);
-    if (!payload?.id || !Array.isArray(payload.formats) || !payload.download || typeof payload.download !== 'object') {
+    const mediaId = payload?.id ?? payload?.token;
+    if (typeof mediaId !== 'string' || !mediaId.trim() || !Array.isArray(payload.formats) || !payload.download || typeof payload.download !== 'object') {
       return res.status(502).json({ error: 'Respons Ssave tidak sesuai format yang diharapkan.' });
     }
 
     const media = payload.formats
       .filter(type => DOWNLOAD_TYPES.has(type) && typeof payload.download[type] === 'string')
       .map(type => ({
-        url: `/api/social-download?id=${encodeURIComponent(payload.id)}&type=${encodeURIComponent(type)}`,
+        url: `/api/social-download?id=${encodeURIComponent(mediaId.trim())}&type=${encodeURIComponent(type)}`,
         type: type === 'mp3' ? 'audio' : 'video',
         quality: type === 'hd' ? 'HD' : type === 'watermark' ? 'Dengan watermark' : 'MP3',
         label: type === 'hd' ? 'Video HD' : type === 'watermark' ? 'Video dengan watermark' : 'Audio MP3'
@@ -90,10 +91,13 @@ async function handleExtract(req, res) {
 }
 
 async function handleDownload(req, res) {
-  const id = typeof req.query?.id === 'string' ? req.query.id : '';
+  // Treat provider IDs as opaque tokens. Do not assume a fixed prefix/length: the
+  // provider may change token encoding while keeping the extract/download contract.
+  const rawId = req.query?.id ?? req.query?.token;
+  const id = typeof rawId === 'string' ? rawId.trim() : '';
   const type = typeof req.query?.type === 'string' ? req.query.type : 'hd';
-  if (!/^ssv_[A-Za-z0-9_-]{8,200}$/.test(id) || !DOWNLOAD_TYPES.has(type)) {
-    return res.status(400).json({ error: 'Token atau format unduhan tidak valid. Cari media lagi.' });
+  if (!id || id.length > 1024 || /[\u0000-\u001f\u007f]/.test(id) || !DOWNLOAD_TYPES.has(type)) {
+    return res.status(400).json({ error: 'Token unduhan kosong atau format unduhan tidak valid. Silakan cari media lagi.' });
   }
 
   try {
