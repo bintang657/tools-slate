@@ -5,9 +5,12 @@ import {
   Coins, QrCode, Braces, Link2, Clock3, Palette, Calculator, Regex, FileText,
   Copy, Download, Zap, ShieldCheck, Command, ExternalLink, RefreshCw, Moon,
   Sun, Star, Globe2, Network, KeyRound, Fingerprint, ScanSearch, LockKeyhole,
-  Shield, HeartPulse, Activity, CheckCircle2, AlertTriangle
+  Shield, HeartPulse, Activity, CheckCircle2, AlertTriangle, AudioLines, Volume2, Play,
+  SkipForward, UserRound, Info, CircleHelp, MessageCircle, ShoppingCart, Compass,
+  DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone
 } from 'lucide-react'
 import './style.css'
+import { tracks, heroVideo } from './media.js'
 
 const tools = [
   { id:'json', name:'JSON Formatter', desc:'Format, validate, dan minify data JSON.', category:'Developer', icon:Braces, tag:'Popular' },
@@ -33,58 +36,66 @@ const tools = [
   { id:'breach', name:'Password Exposure Check', desc:'Periksa hash password dengan k-anonymity.', category:'Security Lab', icon:Fingerprint, tag:'API' },
   { id:'urlscan', name:'URL Security Analyzer', desc:'Analisis skema, hostname, port, dan indikator URL.', category:'Security Lab', icon:ScanSearch },
   { id:'ssl', name:'Certificate Transparency', desc:'Cari catatan sertifikat TLS publik untuk domain.', category:'Security Lab', icon:LockKeyhole, tag:'API' },
+  { id:'terabox', name:'TeraBox Downloader', desc:'Tempat fitur unduh file dari tautan TeraBox.', category:'Downloader', icon:DownloadCloud, tag:'Soon', comingSoon:true },
+  { id:'instagram', name:'Instagram Media', desc:'Tempat fitur media Instagram akan ditambahkan.', category:'Downloader', icon:Video, tag:'Soon', comingSoon:true },
+  { id:'tiktok', name:'TikTok Media', desc:'Tempat fitur video dan audio TikTok akan ditambahkan.', category:'Downloader', icon:Music2, tag:'Soon', comingSoon:true },
 ]
-const categories = ['All Tools','Developer','Security Lab','Image & Design','Text','Utilities','Online Tools']
+const categories = ['All','Downloader','Maker','Tools']
+const categoryFor = (tool) => {
+  if (tool.category==='Downloader') return 'Downloader'
+  if (['weather','currency','ip','dns','ssl','breach'].includes(tool.id)) return 'Tools'
+  if (['qr','color','markdown'].includes(tool.id)) return 'Maker'
+  if (['json','base64','url','hash','uuid','regex','html','text','words','timestamp','unit','percentage','jwt','urlscan'].includes(tool.id)) return 'Tools'
+  return 'Downloader'
+}
 
 function App(){
-  const [active,setActive]=useState('All Tools'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false)
+  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false)
+  const [menuOpen,setMenuOpen]=useState(false), [playing,setPlaying]=useState(false), [trackIndex,setTrackIndex]=useState(0)
+  const audioRef=useRef(null)
   const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
   const [onlyFav,setOnlyFav]=useState(false)
   const searchRef=useRef(null)
+  const currentTrack=tracks[trackIndex]
+  useEffect(()=>{if(!audioRef.current||!currentTrack)return;audioRef.current.src=currentTrack.src;if(playing)audioRef.current.play().catch(()=>setPlaying(false))},[currentTrack,playing])
   useEffect(()=>{
     const onKeyDown=(event)=>{
-      if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){
-        event.preventDefault();searchRef.current?.focus()
-      }
-      if(event.key==='Escape'){
-        if(selected)setSelected(null)
-        else if(document.activeElement===searchRef.current)searchRef.current.blur()
-      }
+      if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();searchRef.current?.focus()}
+      if(event.key==='Escape'){if(selected)setSelected(null);else if(menuOpen)setMenuOpen(false);else if(document.activeElement===searchRef.current)searchRef.current.blur()}
     }
-    window.addEventListener('keydown',onKeyDown)
-    return ()=>window.removeEventListener('keydown',onKeyDown)
-  },[selected])
-  const filtered=useMemo(()=>tools.filter(t=>(active==='All Tools'||t.category===active)&&(!onlyFav||favorites.includes(t.id))&&`${t.name} ${t.desc} ${t.category}`.toLowerCase().includes(query.toLowerCase())),[active,query,onlyFav,favorites])
+    window.addEventListener('keydown',onKeyDown);return ()=>window.removeEventListener('keydown',onKeyDown)
+  },[selected,menuOpen])
+  const filtered=useMemo(()=>tools.filter(t=>(active==='All'||categoryFor(t)===active)&&(!onlyFav||favorites.includes(t.id))&&`${t.name} ${t.desc} ${t.category}`.toLowerCase().includes(query.toLowerCase())),[active,query,onlyFav,favorites])
   const toggleFav=(id)=>setFavorites(old=>{const next=old.includes(id)?old.filter(x=>x!==id):[...old,id];localStorage.setItem('tools-slate-favorites',JSON.stringify(next));return next})
-  return <div className={`app-shell ${dark?'theme-dark':'theme-light'}`}>
-    <div className="ambient ambient-one"/><div className="ambient ambient-two"/>
-    <header className="topbar"><a className="brand" href="#top"><span className="brand-mark"><Command size={19}/></span><span>TOOLS <b>SLATE</b></span></a>
-      <nav className="top-links"><a href="#tools">Explore tools</a><a href="#security">Security lab</a><a href="#about">About</a><a href="https://github.com/bintang657/tools-slate" target="_blank" rel="noreferrer">GitHub <ExternalLink size={13}/></a></nav>
-      <div className="top-actions"><button className="theme-toggle" onClick={()=>setDark(!dark)} aria-label="Toggle theme">{dark?<Sun size={17}/>:<Moon size={17}/>}</button><button className="mobile-toggle" onClick={()=>setMobile(!mobile)} aria-label="Toggle navigation">{mobile?<X/>:<Menu/>}</button></div>
+  const tabs=[['All',Grid2X2],['Downloader',DownloadCloud],['Maker',WandSparkles],['Tools',Wrench]]
+  return <div className={`app-shell ${dark?'theme-dark':'theme-light'} nexus-theme`}>
+    <header className="nexus-header">
+      <button className="info-trigger" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Menu informasi">{menuOpen?<X/>:<Compass/>}</button>
+      <div className="header-info"><strong>Menu Informasi</strong><span>About Dev · Report Bug · Saluran WhatsApp</span></div>
+      <div className="audio-dock"><AudioLines/><button title="Volume" disabled={!tracks.length}><Volume2 size={17}/></button><button title={playing?"Pause":"Putar musik"} disabled={!tracks.length} onClick={()=>setPlaying(!playing)}>{playing?<span className="pause-mark">Ⅱ</span>:<Play size={17}/>}</button><button title="Lagu berikutnya" disabled={!tracks.length} onClick={()=>setTrackIndex(i=>(i+1)%tracks.length)}><SkipForward size={17}/></button><audio ref={audioRef} onEnded={()=>setTrackIndex(i=>(i+1)%tracks.length)} /></div>
+      <button className="menu-toggle" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Buka menu">{menuOpen?<X/>:<Menu/>}</button>
     </header>
-    {mobile&&<div className="mobile-menu"><a href="#tools" onClick={()=>setMobile(false)}>Explore tools</a><a href="#security" onClick={()=>setMobile(false)}>Security lab</a><a href="#about" onClick={()=>setMobile(false)}>About</a></div>}
-    <main id="top">
-      <section className="hero"><div className="hero-orbit orbit-a"/><div className="hero-orbit orbit-b"/><div className="hero-content">
-        <div className="hero-badge"><Sparkles size={14}/> YOUR DIGITAL WORKSPACE</div>
-        <h1>Every tool.<br/><span>One smarter space.</span></h1>
-        <p className="hero-copy">A carefully built collection of practical tools for development, productivity, and everyday security checks.</p>
-        <div className="search-wrap"><Search size={19}/><input ref={searchRef} value={query} onChange={e=>{setQuery(e.target.value);setActive('All Tools')}} placeholder="Search 23 tools..." aria-label="Search tools"/><kbd>⌘ K</kbd></div>
-        <div className="hero-meta"><span><i className="status-dot"/> {tools.length} tools ready</span><span><ShieldCheck size={15}/> Browser-first privacy</span><span><Zap size={15}/> Fast & lightweight</span></div>
-      </div>
-      <div className="hero-visual" aria-hidden="true"><div className="visual-ring ring-one"/><div className="visual-ring ring-two"/><div className="slate-cube"><div className="cube-face cube-front"><Command size={48}/><span>SLATE</span></div><div className="cube-face cube-side"/><div className="cube-face cube-top"/></div><div className="float-chip chip-a"><ShieldCheck size={16}/> Secure by design</div><div className="float-chip chip-b"><Activity size={16}/> Tools online</div></div>
+    {menuOpen&&<div className="info-panel"><div className="panel-heading"><div><b>NEXUS MENU</b><span>Informasi dan masukan</span></div><span className="online-pill"><i/> ONLINE</span></div>
+      <a className="info-card" href="#about" onClick={()=>setMenuOpen(false)}><span className="info-icon"><UserRound/></span><span><b>About Dev</b><small>Profil developer, toolkit, playlist, dan daftar project.</small></span><ArrowUpRight/></a>
+      <a className="info-card" href="mailto:hello@toolsslate.dev?subject=Tools%20Slate%20Feedback"><span className="info-icon"><CircleHelp/></span><span><b>Report Bug, Saran & Ide</b><small>Laporkan bug, kirim saran, ide fitur, dan cek balasan.</small></span><ArrowUpRight/></a>
+      <a className="info-card" href="https://github.com/bintang657/tools-slate" target="_blank" rel="noreferrer"><span className="info-icon"><ShoppingCart/></span><span><b>Project & Source Code</b><small>Lihat project dan pembaruan Tools Slate di GitHub.</small></span><ExternalLink/></a>
+      <a className="info-card whatsapp" href="https://whatsapp.com/" target="_blank" rel="noreferrer"><span className="info-icon"><MessageCircle/></span><span><b>Komunitas</b><small>Tambahkan tautan komunitas WhatsApp milikmu di konfigurasi.</small></span><ExternalLink/></a>
+    </div>}
+    <main id="top" className="nexus-main">
+      <section className="nexus-hero"><div className="hero-art">{heroVideo&&<video className="hero-video" autoPlay muted loop playsInline onError={e=>{e.currentTarget.style.display="none"}}><source src={heroVideo} type="video/mp4"/></video>}<div className="hero-art-glow"/><div className="hero-art-copy"><span>✦ TOOLS SLATE</span><small>YOUR DIGITAL SPACE</small></div></div></section>
+      <section className="visitor-panel"><div className="visitor-avatar"><UserRound/></div><div className="visitor-data"><div><Globe2/> <span>NEGARA</span> <b>Indonesia</b><Smartphone/> <span>DEVICE</span> <b>Web</b></div><div><Globe2/> <span>BROWSER</span> <b>Browser</b><AudioLines/> <span>STATUS</span> <b className="online-text">Online</b></div><div className="visitor-tags"><span className="visitor-chip"><Activity/> Tools aktif</span><span className="visitor-chip role-chip">Member</span><span className="visitor-chip vip-chip">✦ Premium UI</span></div></div></section>
+      <section className="tools-section nexus-tools" id="tools"><div className="nexus-toolbar"><div className="category-row">{tabs.map(([name,Icon])=><button key={name} className={`category-pill ${active===name?'active':''}`} onClick={()=>{setActive(name);setOnlyFav(false)}}><Icon size={17}/>{name}</button>)}</div></div>
+        <div className="section-heading nexus-section-heading"><div><h2><Grid2X2/> {active==='All'?'Semua Tools':active}</h2><p>Temukan tools yang kamu butuhkan.</p></div><span className="result-count">{filtered.length} TOOLS</span></div>
+        <div className="search-wrap nexus-search"><Search size={18}/><input ref={searchRef} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari tools..." aria-label="Cari tools"/><kbd>⌘ K</kbd></div>
+        {filtered.length?<div className="tool-grid">{filtered.map(t=><ToolCard key={t.id} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
-      <section className="tools-section" id="tools"><div className="section-heading"><div><div className="eyebrow">THE TOOLBOX</div><h2>Explore all tools</h2><p>Small utilities, thoughtfully brought together.</p></div><span className="result-count">{filtered.length} / {tools.length} TOOLS</span></div>
-        <div className="toolbar"><div className="category-row">{categories.map(c=><button key={c} className={`category-pill ${active===c?'active':''}`} onClick={()=>{setActive(c);setOnlyFav(false)}}>{c}</button>)}</div><button className={`favorites-filter ${onlyFav?'active':''}`} onClick={()=>setOnlyFav(!onlyFav)}><Star size={14} fill={onlyFav?'currentColor':'none'}/> Favorites</button></div>
-        {filtered.length?<div className="tool-grid">{filtered.map(t=><ToolCard key={t.id} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>No tools found</h3><p>Try another keyword or category.</p><button onClick={()=>{setQuery('');setActive('All Tools');setOnlyFav(false)}}>Clear filters</button></div>}
-      </section>
-      <section className="security-strip" id="security"><div className="security-icon"><Shield size={23}/></div><div><div className="eyebrow">SECURITY LAB</div><h2>Understand your digital surface.</h2><p>Passive diagnostics, local decoders, and public-data lookups. No exploit or intrusion features.</p></div><button onClick={()=>{setActive('Security Lab');setOnlyFav(false);document.getElementById('tools')?.scrollIntoView({behavior:'smooth'})}}>Explore security tools <ArrowUpRight size={16}/></button></section>
-      <section className="bottom-banner" id="about"><div className="banner-icon"><Sparkles size={23}/></div><div><h3>Tools that get out of your way.</h3><p>Useful utilities, clear results, and a workspace that feels good to use.</p></div><a href="#tools">Explore tools <ArrowUpRight size={16}/></a></section>
+      <section className="nexus-footer-card" id="about"><div><b>TOOLS SLATE</b><p>Tools sederhana untuk kebutuhan digital sehari-hari.</p></div><a href="https://github.com/bintang657/tools-slate" target="_blank" rel="noreferrer">GitHub <ExternalLink size={14}/></a></section>
     </main>
     <footer><a className="brand footer-brand" href="#top"><span className="brand-mark"><Command size={17}/></span><span>TOOLS <b>SLATE</b></span></a><span>Built for everyday productivity.</span><span>© {new Date().getFullYear()} Tools Slate</span></footer>
     {selected&&<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>}
   </div>
 }
-function ToolCard({tool,onClick,favorite,onFavorite}){const Icon=tool.icon;return <article className="tool-card" onClick={onClick} onKeyDown={e=>e.key==='Enter'&&onClick()} tabIndex="0" role="button"><div className="card-top"><span className="tool-icon"><Icon size={20}/></span><div className="card-badges">{tool.tag&&<span className={`tag ${tool.tag==='API'?'api':''}`}>{tool.tag}</span>}<button className={`fav-btn ${favorite?'saved':''}`} onClick={e=>{e.stopPropagation();onFavorite()}} aria-label="Toggle favorite"><Star size={15} fill={favorite?'currentColor':'none'}/></button></div></div><h3>{tool.name}</h3><p>{tool.desc}</p><span className="card-open">Open tool <ArrowUpRight size={15}/></span></article>}
+function ToolCard({tool,onClick,favorite,onFavorite}){const Icon=tool.icon;return <article className={`tool-card ${tool.comingSoon?'coming-soon':''}`} onClick={()=>!tool.comingSoon&&onClick()} onKeyDown={e=>e.key==='Enter'&&!tool.comingSoon&&onClick()} tabIndex={tool.comingSoon?-1:0} role="button"><div className="card-top"><span className="tool-icon"><Icon size={20}/></span><div className="card-badges">{tool.tag&&<span className={`tag ${tool.tag==='API'?'api':''}`}>{tool.tag}</span>}<button className={`fav-btn ${favorite?'saved':''}`} onClick={e=>{e.stopPropagation();onFavorite()}} aria-label="Toggle favorite"><Star size={15} fill={favorite?'currentColor':'none'}/></button></div></div><h3>{tool.name}</h3><p>{tool.desc}</p><span className="card-open">{tool.comingSoon?'Coming soon':'Open tool'} {!tool.comingSoon&&<ArrowUpRight size={15}/>}</span></article>}
 
 function ToolModal({tool,onClose}){
  const [value,setValue]=useState(''),[output,setOutput]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[extra,setExtra]=useState(''),[extra2,setExtra2]=useState(''),[result,setResult]=useState(null)
