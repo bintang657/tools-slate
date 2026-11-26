@@ -1036,3 +1036,81 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
   }
   .nexus-theme .tool-card:active { transform: none; }
 }
+
+/* Extra motion layer: slow ambient movement, expressive icons, and live-state cues. */
+.nexus-hero .hero-video {
+  animation: slateHeroDrift 28s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.visitor-avatar {
+  position: relative;
+  isolation: isolate;
+  animation: slateAvatarFloat 5s ease-in-out infinite;
+}
+.visitor-avatar::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: -7px;
+  border: 1px solid #75d7ff55;
+  border-radius: inherit;
+  opacity: .55;
+  animation: slateAvatarHalo 3.6s ease-out infinite;
+}
+.visitor-data .online-text::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin: 0 7px 1px 0;
+  border-radius: 50%;
+  background: #63d996;
+  box-shadow: 0 0 0 0 #63d99675;
+  animation: slateOnlinePing 2.2s ease-out infinite;
+}
+.nexus-toolbar .category-pill.active {
+  animation: slateTabGlow 4s ease-in-out infinite;
+}
+.nexus-theme .tool-card:hover .tool-icon {
+  animation: slateIconLift .55s cubic-bezier(.18,.9,.25,1.18) both;
+}
+.music-trigger.is-playing {
+  animation: slatePlayingPulse 2s ease-in-out infinite;
+}
+@keyframes slateHeroDrift {
+  0% { transform: scale(1.015) translate3d(-.3%, 0, 0); }
+  100% { transform: scale(1.07) translate3d(.5%, -.4%, 0); }
+}
+@keyframes slateAvatarFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes slateAvatarHalo {
+  0% { transform: scale(.94); opacity: .5; }
+  75%, 100% { transform: scale(1.16); opacity: 0; }
+}
+@keyframes slateOnlinePing {
+  0% { box-shadow: 0 0 0 0 #63d99675; }
+  75%, 100% { box-shadow: 0 0 0 6px #63d99600; }
+}
+@keyframes slateTabGlow {
+  0%, 100% { box-shadow: 0 8px 24px #66c9f433, inset 0 1px #fff; }
+  50% { box-shadow: 0 10px 30px #66c9f477, inset 0 1px #fff; }
+}
+@keyframes slateIconLift {
+  0% { transform: translateY(-2px) scale(1); }
+  55% { transform: translateY(-7px) scale(1.12) rotate(-4deg); }
+  100% { transform: translateY(-5px) scale(1.09) rotate(0); }
+}
+@keyframes slatePlayingPulse {
+  0%, 100% { box-shadow: 0 0 0 0 #76d7ff00; }
+  50% { box-shadow: 0 0 0 6px #76d7ff1c; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexus-hero .hero-video, .visitor-avatar, .visitor-avatar::before,
+  .visitor-data .online-text::before, .nexus-toolbar .category-pill.active,
+  .nexus-theme .tool-card:hover .tool-icon, .music-trigger.is-playing {
+    animation: none !important;
+    will-change: auto;
+  }
+}
