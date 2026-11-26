@@ -7,7 +7,7 @@ import {
   Sun, Star, Globe2, Network, KeyRound, Fingerprint, ScanSearch, LockKeyhole,
   Shield, HeartPulse, Activity, CheckCircle2, AlertTriangle, AudioLines, Volume2, Play,
   SkipBack, SkipForward, UserRound, Info, CircleHelp, MessageCircle, ShoppingCart, Compass, Pause,
-  DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone, Image
+  DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone, Image, Wifi, WifiOff
 } from 'lucide-react'
 import { PhotoHdModal, Mp4ToMp3Modal } from './media-tools.jsx'
 import { musicAlbums } from './music-library.js'
@@ -54,6 +54,39 @@ const categoryFor = (tool) => {
   return 'Downloader'
 }
 
+const timezoneCountryCodes = {
+  'Asia/Jakarta':'ID','Asia/Pontianak':'ID','Asia/Makassar':'ID','Asia/Jayapura':'ID',
+  'Asia/Singapore':'SG','Asia/Kuala_Lumpur':'MY','Asia/Bangkok':'TH','Asia/Manila':'PH',
+  'Asia/Ho_Chi_Minh':'VN','Asia/Seoul':'KR','Asia/Tokyo':'JP','Asia/Kolkata':'IN',
+  'Asia/Dubai':'AE','Asia/Riyadh':'SA','Europe/London':'GB','Europe/Paris':'FR',
+  'Europe/Berlin':'DE','Europe/Rome':'IT','Europe/Madrid':'ES','Europe/Amsterdam':'NL',
+  'Europe/Moscow':'RU','America/New_York':'US','America/Chicago':'US','America/Denver':'US',
+  'America/Los_Angeles':'US','America/Toronto':'CA','America/Vancouver':'CA',
+  'America/Mexico_City':'MX','America/Sao_Paulo':'BR','Australia/Sydney':'AU',
+  'Australia/Melbourne':'AU','Pacific/Auckland':'NZ','Africa/Cairo':'EG','Africa/Johannesburg':'ZA',
+}
+
+function detectVisitorDetails(){
+  const nav=typeof navigator==='undefined'?{}:navigator
+  const timezone=Intl.DateTimeFormat().resolvedOptions().timeZone||''
+  const localeList=nav.languages?.length?nav.languages:[nav.language]
+  const localeRegion=localeList.map(locale=>{try{return new Intl.Locale(locale).region}catch{return null}}).find(Boolean)
+  const countryCode=timezoneCountryCodes[timezone]||localeRegion
+  let country='Tidak diketahui'
+  if(countryCode){try{country=new Intl.DisplayNames(['id'],{type:'region'}).of(countryCode)||countryCode}catch{country=countryCode}}
+  const agent=nav.userAgent||''
+  const brands=nav.userAgentData?.brands?.map(brand=>brand.brand)||[]
+  const browser= /EdgA?\//i.test(agent)||brands.some(brand=>/Microsoft Edge/i.test(brand))?'Edge'
+    :/OPR\//i.test(agent)||brands.some(brand=>/Opera/i.test(brand))?'Opera'
+    :/SamsungBrowser\//i.test(agent)?'Samsung Internet'
+    :/FxiOS|Firefox\//i.test(agent)?'Firefox'
+    :/CriOS|Chrome\//i.test(agent)||brands.some(brand=>/Chromium|Google Chrome/i.test(brand))?'Chrome'
+    :/Safari\//i.test(agent)?'Safari':'Browser'
+  const isTablet=/iPad|Tablet|PlayBook|Silk/i.test(agent)||(nav.platform==='MacIntel'&&nav.maxTouchPoints>1)
+  const isMobile=typeof nav.userAgentData?.mobile==='boolean'?nav.userAgentData.mobile:/Android|iPhone|iPod|Mobile/i.test(agent)
+  return {country,browser,device:isTablet?'Tablet':isMobile?'Mobile':'Desktop',online:nav.onLine!==false}
+}
+
 function App(){
   const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false)
   const [menuOpen,setMenuOpen]=useState(false), [musicPanelOpen,setMusicPanelOpen]=useState(false), [infoPage,setInfoPage]=useState(null), [playing,setPlaying]=useState(false), [trackIndex,setTrackIndex]=useState(0)
@@ -63,6 +96,22 @@ function App(){
   const visualizerRef=useRef(null), audioContextRef=useRef(null), mediaSourceRef=useRef(null), analyserRef=useRef(null)
   const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
   const [onlyFav,setOnlyFav]=useState(false)
+  const [visitorDetails,setVisitorDetails]=useState(detectVisitorDetails)
+  useEffect(()=>{
+    const refreshVisitor=()=>setVisitorDetails(detectVisitorDetails())
+    window.addEventListener('online',refreshVisitor)
+    window.addEventListener('offline',refreshVisitor)
+    window.addEventListener('focus',refreshVisitor)
+    document.addEventListener('visibilitychange',refreshVisitor)
+    const timer=window.setInterval(refreshVisitor,30000)
+    return()=>{
+      window.removeEventListener('online',refreshVisitor)
+      window.removeEventListener('offline',refreshVisitor)
+      window.removeEventListener('focus',refreshVisitor)
+      document.removeEventListener('visibilitychange',refreshVisitor)
+      window.clearInterval(timer)
+    }
+  },[])
   const searchRef=useRef(null)
   const albumTracks=musicAlbums.find(album=>album.name===selectedAlbum)?.tracks||[]
   const currentTrack=albumTracks[trackIndex]||albumTracks[0]||null
@@ -214,7 +263,7 @@ function App(){
     {infoPage&&<InfoPage page={infoPage} onClose={()=>setInfoPage(null)}/> }
     <main id="top" className="nexus-main">
       <section className="nexus-hero"><div className="hero-art">{heroVideo&&<video className="hero-video" autoPlay muted loop playsInline onError={e=>{e.currentTarget.style.display="none"}}><source src={heroVideo} type="video/mp4"/></video>}<div className="hero-art-glow"/><div className="hero-art-copy"><span>TOOLS SLATE</span><small>YOUR DIGITAL SPACE</small></div></div></section>
-      <section className="visitor-panel"><div className="visitor-avatar"><UserRound/></div><div className="visitor-data"><div><Globe2/> <span>NEGARA</span> <b>Indonesia</b><Smartphone/> <span>DEVICE</span> <b>Web</b></div><div><Globe2/> <span>BROWSER</span> <b>Browser</b><AudioLines/> <span>STATUS</span> <b className="online-text">Online</b></div><div className="visitor-tags"><span className="visitor-chip"><Activity/> Tools aktif</span><span className="visitor-chip role-chip">Member</span></div></div></section>
+      <section className="visitor-panel"><div className="visitor-avatar"><UserRound/></div><div className="visitor-data"><div><Globe2/> <span>NEGARA</span> <b title="Perkiraan otomatis dari zona waktu dan bahasa perangkat">{visitorDetails.country}</b><Smartphone/> <span>DEVICE</span> <b>{visitorDetails.device}</b></div><div><Globe2/> <span>BROWSER</span> <b>{visitorDetails.browser}</b><span className="visitor-status-label">STATUS</span><span className={`visitor-status ${visitorDetails.online?'is-online':'is-offline'}`} role="status" aria-live="polite">{visitorDetails.online?<Wifi/>:<WifiOff/>}<b>{visitorDetails.online?'ONLINE':'OFFLINE'}</b><small>LIVE</small></span></div><div className="visitor-tags"><span className="visitor-chip"><Activity/> Tools aktif</span><span className="visitor-chip role-chip">Member</span></div></div></section>
       <section className="tools-section nexus-tools" id="tools"><div className="nexus-toolbar"><div className="category-row">{tabs.map(([name,Icon])=><button key={name} className={`category-pill ${active===name?'active':''}`} onClick={()=>{setActive(name);setOnlyFav(false)}}><Icon size={17}/>{name}</button>)}</div></div>
         <div className="section-heading nexus-section-heading"><div><h2><Grid2X2/> {active==='All'?'Semua Tools':active}</h2><p>Temukan tools yang kamu butuhkan.</p></div><span className="result-count">{filtered.length} TOOLS</span></div>
         <div className="search-wrap nexus-search"><Search size={18}/><input ref={searchRef} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari tools..." aria-label="Cari tools"/></div>
