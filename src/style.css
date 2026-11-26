@@ -981,3 +981,58 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
     border-radius: 0 !important;
   }
 }
+
+/* Motion refresh: intentional, staggered entrances with tactile pointer feedback. */
+.nexus-theme .tool-card {
+  animation-name: slateCardReveal, luxCardGradient;
+  animation-duration: .72s, 20s;
+  animation-timing-function: cubic-bezier(.2,.85,.25,1), ease-in-out;
+  animation-delay: calc(var(--card-index, 0) * 55ms), 0s;
+  animation-fill-mode: both, both;
+}
+.nexus-theme .tool-card:before {
+  background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 0%), #bdeeff26, transparent 58%);
+  transition: opacity .32s var(--motion-smooth);
+}
+.nexus-theme .tool-card:focus-visible {
+  outline: 2px solid #92dfff;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 6px #69caff1c, 0 18px 38px #0005;
+}
+.nexus-theme .tool-card:active { transform: translateY(-1px) scale(.992); }
+.nexus-theme .tool-card .fav-btn.saved svg {
+  animation: slateFavoritePop .38s var(--cin-spring, cubic-bezier(.18,.9,.25,1.18)) both;
+}
+.nexus-toolbar .category-pill:active { transform: scale(.97); }
+.nexus-toolbar .category-pill.active { transition: color .25s, background .35s, box-shadow .35s, transform .25s; }
+.visitor-panel { animation: slatePanelArrive .7s .12s var(--motion-smooth, cubic-bezier(.22,1,.36,1)) both; }
+.nexus-section-heading { animation: slatePanelArrive .55s .08s var(--motion-smooth, cubic-bezier(.22,1,.36,1)) both; }
+.nexus-search { animation: slatePanelArrive .55s .14s var(--motion-smooth, cubic-bezier(.22,1,.36,1)) both; }
+.empty { animation: slatePanelArrive .38s var(--motion-smooth, cubic-bezier(.22,1,.36,1)) both; }
+@keyframes slateCardReveal {
+  from { opacity: 0; transform: translate3d(0, 20px, 0) scale(.985); filter: blur(5px); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+}
+@keyframes slatePanelArrive {
+  from { opacity: 0; transform: translate3d(0, 12px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes slateFavoritePop {
+  0% { transform: scale(.65) rotate(-15deg); }
+  65% { transform: scale(1.28) rotate(7deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+@media (max-width: 700px) {
+  .nexus-theme .tool-card { animation-duration: .62s, 24s; }
+  .nexus-theme .tool-card:hover { transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nexus-theme .tool-card, .nexus-theme .tool-card .fav-btn.saved svg,
+  .visitor-panel, .nexus-section-heading, .nexus-search, .empty {
+    animation: none !important;
+  }
+  .nexus-theme .tool-card, .nexus-theme .tool-card *, .nexus-toolbar .category-pill {
+    transition: none !important;
+  }
+  .nexus-theme .tool-card:active { transform: none; }
+}
