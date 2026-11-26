@@ -1434,29 +1434,10 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
   .nexus-theme .tool-card { animation: none !important; }
 }
 
-/* Visitor panel: no avatar halo; a live, device-reported battery indicator. */
+/* Visitor panel: no avatar halo; battery details follow the same inline metadata style. */
 .visitor-avatar { animation: none !important; }
 .visitor-avatar::before { content: none !important; display: none !important; animation: none !important; }
-.visitor-data .visitor-metric-label { color: #819bb8; font-size: 11px; letter-spacing: .5px; }
-.visitor-data .visitor-battery {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 10px;
-  border: 1px solid rgba(88, 207, 255, .25);
-  border-radius: 999px;
-  background: linear-gradient(120deg, rgba(27, 113, 159, .2), rgba(18, 46, 76, .48));
-  color: #a8e9ff;
-  box-shadow: inset 0 1px rgba(255,255,255,.06), 0 0 18px rgba(39, 180, 242, .08);
-  white-space: nowrap;
-}
-.visitor-data .visitor-battery svg { width: 16px; height: 16px; color: #75dcff; }
-.visitor-data .visitor-battery b { margin: 0; color: #c5f3ff; font-size: 11px; letter-spacing: .04em; }
-.visitor-data .visitor-battery small { padding: 3px 5px; border-radius: 5px; background: rgba(79, 193, 237, .13); color: #8bdfff; font: 700 8px/1 'DM Mono', monospace; letter-spacing: .06em; }
-.visitor-data .visitor-battery.is-charging { border-color: rgba(88, 207, 255, .42); box-shadow: inset 0 1px rgba(255,255,255,.06), 0 0 20px rgba(39, 180, 242, .14); }
-.visitor-data .visitor-battery.unavailable { border-color: rgba(126, 159, 187, .25); background: rgba(77, 102, 128, .16); color: #b1c1d2; box-shadow: none; }
-.visitor-data .visitor-battery.unavailable svg,.visitor-data .visitor-battery.unavailable b,.visitor-data .visitor-battery.unavailable small { color: #b1c1d2; }
-.visitor-data .visitor-battery.unavailable small { background: rgba(144, 168, 191, .12); }
+.visitor-data .battery-value { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* Slate menu: centered copy and a cohesive ice-blue palette. */
 .info-panel .panel-heading {
