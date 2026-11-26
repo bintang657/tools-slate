@@ -14,46 +14,49 @@ import fs from 'fs';
   
   try {
     console.log("Membuka halaman...");
+    // Tunggu sampai halaman bener-bener idle (termasuk eksekusi JS)
     await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
-    console.log("Halaman dimuat.");
+    console.log("Halaman dimuat. Menunggu proses JS...");
     
-    page.on('request', request => {
-      const reqUrl = request.url();
-      if (!reqUrl.includes('khaddavi') && !reqUrl.includes('sfl.gl') && reqUrl.startsWith('http') && !reqUrl.includes('google')) {
-         console.log(`[Network] Ketemu URL baru: ${reqUrl}`);
-         finalUrl = reqUrl;
-      }
-    });
+    // Kasih waktu tambahan 10 detik buat jaga-jaga kalau ada countdown
+    await page.waitForTimeout(10000);
 
-    const texts = ["DOWNLOAD NOW", "Get Link", "Lanjut", "Continue", "Download", "Open"];
-    for (const t of texts) {
-      const btn = page.locator(`a:has-text("${t}"), button:has-text("${t}")`).first();
-      if (await btn.count() > 0) {
-        console.log(`Menemukan tombol: ${t}. Mencoba klik...`);
-        const href = await btn.getAttribute('href');
-        if (href && href.startsWith('http') && !href.includes('khaddavi')) {
-            finalUrl = href;
-            console.log(`[Href] Link ditemukan: ${href}`);
-            break;
-        } else {
-            await btn.click({ force: true }).catch(e => console.log('Gagal klik:', e.message));
-            await page.waitForTimeout(5000);
-        }
+    // Trik 1: Kumpulin semua link (<a href>) yang bukan domain khaddavi/sfl.gl
+    const links = await page.evaluate(() => {
+      return Array.from(document.querySelectorAll('a')).map(a => a.href);
+    });
+    
+    console.log('Total link ditemukan:', links.length);
+    
+    // Cari link yang bukan bagian dari gateway atau script kosong
+    const externalLink = links.find(l => 
+      l.startsWith('http') && 
+      !l.includes('khaddavi') && 
+      !l.includes('sfl.gl') && 
+      !l.includes('javascript:') &&
+      !l.includes('google.com') &&
+      !l.includes('facebook.com')
+    );
+
+    if (externalLink) {
+      finalUrl = externalLink;
+      console.log(`[HTML scan] Link tujuan ditemukan: ${externalLink}`);
+    } else {
+      // Trik 2: Kalau nggak nemu di <a>, coba cari URL di dalam script/teks halaman
+      const html = await page.content();
+      const urlRegex = /(https?:\/\/(?!(?:www\.)?(?:khaddavi|sfl\.gl|google|facebook|instagram|cloudflare))[^\s"'<>]+)/g;
+      const matches = html.match(urlRegex);
+      if (matches && matches.length > 0) {
+         // Ambil yang paling akhir (biasanya link tujuan ada di script bawah)
+         finalUrl = matches[matches.length - 1];
+         console.log(`[Script scan] Link ditemukan: ${finalUrl}`);
       }
     }
 
-    if (page.url() !== url) {
+    // Trik 3: Kalau URL halaman ternyata udah berubah (redirect otomatis)
+    if (page.url() !== url && !page.url().includes('khaddavi')) {
       finalUrl = page.url();
       console.log(`[URL Page] URL berubah jadi: ${finalUrl}`);
-    }
-
-    if (finalUrl === url) {
-        const allLinks = await page.evaluate(() => Array.from(document.querySelectorAll('a')).map(a => a.href));
-        const externalLink = allLinks.find(l => l.startsWith('http') && !l.includes('khaddavi') && !l.includes('sfl.gl') && !l.includes('javascript:'));
-        if (externalLink) {
-            finalUrl = externalLink;
-            console.log(`[HTML scan] Link ditemukan: ${externalLink}`);
-        }
     }
     
     fs.writeFileSync('result.json', JSON.stringify({ success: true, destination: finalUrl }, null, 2));
@@ -62,9 +65,6 @@ import fs from 'fs';
   } catch (err) {
     fs.writeFileSync('result.json', JSON.stringify({ success: false, error: err.message }, null, 2));
     console.log(`\n❌ ERROR: ${err.message}`);
-    const html = await page.content().catch(()=>'');
-    console.log('--- POTONGAN HTML ---');
-    console.log(html.substring(0, 3000)); 
   } finally {
     await browser.close();
   }
