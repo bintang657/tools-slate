@@ -1187,3 +1187,29 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
   .music-provider-host.spotify { width: min(320px,calc(100vw - 20px)); }
   .music-provider-host.youtube .music-provider-target,.music-provider-host.spotify .music-provider-target { width: 100%; }
 }
+
+.music-catalog-section { display: grid; gap: 12px; }
+.music-source-tabs { display: flex; gap: 8px; }
+.music-source-tabs button,.music-connect-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 8px 12px; border: 1px solid #9bcce52b; border-radius: 9px; background: #0c1c2c; color: #a9c0d1; cursor: pointer; font-size: 10px; }
+.music-source-tabs button.active { border-color: #5dc9ec80; background: #123548; color: #c9f3ff; }
+.music-catalog-form { grid-template-columns: minmax(0,1fr) auto; align-items: end; }
+.music-catalog-form > label { grid-column: 1 / -1; }
+.music-catalog-form .run-btn { min-width: 125px; }
+.music-connect-btn { grid-column: 1 / -1; justify-self: start; }
+.music-results { display: grid; gap: 7px; max-height: 290px; overflow: auto; }
+.music-result { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px; border: 1px solid #9bcce51c; border-radius: 9px; background: #0b1927; color: #dcebf4; text-align: left; cursor: pointer; }
+.music-result:hover { border-color: #68d1f280; background: #10283a; }
+.music-result > img,.music-result-placeholder { flex: 0 0 46px; width: 46px; height: 46px; border-radius: 6px; object-fit: cover; }
+.music-result-placeholder { display: grid; place-items: center; background: #173348; color: #8edfff; }
+.music-result-text { display: grid; flex: 1; gap: 4px; min-width: 0; }
+.music-result-text b,.music-result-text small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.music-result-text b { font-size: 10px; }
+.music-result-text small { color: #8fa9bb; font-size: 9px; }
+.music-result > svg { flex: 0 0 auto; color: #8fe5ff; }
+.music-url-fallback { padding: 10px 0 0; border-top: 1px solid #9bcce522; }
+.music-url-fallback summary { display: flex; align-items: center; gap: 7px; color: #a9c0d1; cursor: pointer; font-size: 10px; }
+.music-url-fallback[open] summary { margin-bottom: 12px; }
+@media(max-width:500px) {
+  .music-catalog-form { grid-template-columns: 1fr; }
+  .music-catalog-form .run-btn { width: 100%; }
+}
