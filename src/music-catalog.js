@@ -1,5 +1,7 @@
-const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || ''
-const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || ''
+// These are public browser-side credentials, supplied by the site owner.
+// Restrict the YouTube key to YouTube Data API v3 and the deployed referrers.
+const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY || 'AIzaSyB9kLbDp9AmpUiy45VH3W8gFHKMgy7_SKw'
+const SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID || '804b890dc1a7439ab6f65a8b8dfe202c'
 const SPOTIFY_SCOPES = []
 const TOKEN_KEY = 'tools-slate-spotify-access-token'
 const EXPIRY_KEY = 'tools-slate-spotify-token-expiry'
