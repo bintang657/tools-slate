@@ -6,7 +6,7 @@ import {
   Copy, Download, Zap, ShieldCheck, ExternalLink, RefreshCw, Moon,
   Sun, Star, Globe2, Network, KeyRound, Fingerprint, ScanSearch, LockKeyhole,
   Shield, HeartPulse, Activity, CheckCircle2, AlertTriangle, AudioLines, Volume2, Play,
-  SkipForward, UserRound, Info, CircleHelp, MessageCircle, ShoppingCart, Compass,
+  SkipBack, SkipForward, UserRound, Info, CircleHelp, MessageCircle, ShoppingCart, Compass, Pause,
   DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone, Image
 } from 'lucide-react'
 import { PhotoHdModal, Mp4ToMp3Modal } from './media-tools.jsx'
@@ -44,6 +44,7 @@ const tools = [
   { id:'lyricssearch', name:'Lyrics Finder', desc:'Cari lirik lagu berdasarkan judul dan nama artis.', category:'Online Tools', icon:Music2, tag:'API' },
 ]
 const categories = ['All','Downloader','Maker','Tools']
+const formatTime = value => {const seconds=Math.max(0,Math.floor(Number(value)||0));return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}
 const categoryFor = (tool) => {
   if (tool.category==='Downloader') return 'Downloader'
   if (['weather','currency','ip','dns','ssl','breach','lyricssearch'].includes(tool.id)) return 'Tools'
@@ -56,6 +57,7 @@ function App(){
   const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false)
   const [menuOpen,setMenuOpen]=useState(false), [musicPanelOpen,setMusicPanelOpen]=useState(false), [infoPage,setInfoPage]=useState(null), [playing,setPlaying]=useState(false), [trackIndex,setTrackIndex]=useState(0)
   const [selectedAlbum,setSelectedAlbum]=useState(()=>musicAlbums[0]?.name||''), [volume,setVolume]=useState(0.72), [muted,setMuted]=useState(false)
+  const [audioTime,setAudioTime]=useState(0), [audioDuration,setAudioDuration]=useState(0)
   const audioRef=useRef(null)
   const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
   const [onlyFav,setOnlyFav]=useState(false)
@@ -74,7 +76,7 @@ function App(){
     const source=currentTrack?.src
     if(!source){audio.pause();audio.removeAttribute('src');audio.load();if(playing)setPlaying(false);return}
     const resolved=new URL(source,document.baseURI).href
-    if(audio.src!==resolved){audio.pause();audio.src=source;audio.load()}
+    if(audio.src!==resolved){audio.pause();audio.src=source;audio.load();setAudioTime(0);setAudioDuration(0)}
     if(playing){if(audio.paused)audio.play().catch(()=>setPlaying(false))}else if(!audio.paused)audio.pause()
   },[currentTrack,playing])
   const audioAvailable=!!currentTrack
@@ -115,26 +117,38 @@ function App(){
   const tabs=[['All',Grid2X2],['Downloader',DownloadCloud],['Maker',WandSparkles],['Tools',Wrench]]
   return <div className={`app-shell ${dark?'theme-dark':'theme-light'} nexus-theme`}>
     <header className={`nexus-header ${musicPanelOpen?'music-panel-open':''}`}>
-      <button className={`music-panel-toggle ${musicPanelOpen?'active':''}`} onClick={()=>setMusicPanelOpen(v=>!v)} aria-label={musicPanelOpen?'Tutup pemutar musik':'Buka pemutar musik'} aria-expanded={musicPanelOpen} title="Music Player">{musicPanelOpen?<X/>:<Music2/>}</button>
-      {musicPanelOpen&&<div className="music-panel-content">
-        <button className={`info-trigger music-trigger ${playing?'is-playing':''}`} onClick={togglePlayback} aria-label={playing?'Jeda musik':'Putar musik'} title={playing?'Jeda musik':'Putar musik'} disabled={!audioAvailable}>{playing?<AudioLines/>:<Play/>}</button>
-        <div className="header-info music-track-info">
-          <strong>{currentTrack?.title||'Music Player'}</strong>
-          <span>{currentTrack?`${currentTrack.album} · ${currentTrack.artist}`:'Tambah file audio ke src/music/albums/'}</span>
-          <div className="music-library-selects">
-            <select aria-label="Pilih album" value={selectedAlbum} onChange={selectAlbum} disabled={!musicAlbums.length}>{musicAlbums.map(album=><option key={album.name} value={album.name}>{album.name}</option>)}</select>
-            <select aria-label="Pilih lagu" value={currentTrack?.id||''} onChange={selectTrack} disabled={!albumTracks.length}>{albumTracks.map(track=><option key={track.id} value={track.id}>{track.title}</option>)}</select>
+      <button className={`music-panel-toggle ${musicPanelOpen?'active':''} ${playing?'is-playing':''}`} onClick={()=>setMusicPanelOpen(v=>!v)} aria-label={musicPanelOpen?'Tutup pemutar musik':'Buka pemutar musik'} aria-expanded={musicPanelOpen} title="Music Player">{musicPanelOpen?<X/>:<Music2/>}</button>
+      {musicPanelOpen&&<div className="music-panel-content" role="region" aria-label="Music Player">
+        <div className="music-player-top">
+          <div className={`music-cover ${playing?'spinning':''}`} aria-hidden="true"><span>{selectedAlbum.split(/\s+/).filter(Boolean).map(word=>word[0]).join('').slice(0,5)||'S'}</span><i/></div>
+          <div className="music-track-info">
+            <span className="music-player-overline">NOW PLAYING · {currentTrack?.album||'YOUR LIBRARY'}</span>
+            <strong>{currentTrack?.title||'Music Player'}</strong>
+            <small>{currentTrack?currentTrack.artist:'Tambahkan lagu ke folder album untuk mulai'}</small>
+            <div className={`music-visualizer ${playing?'active':''}`} aria-label={playing?'Musik sedang diputar':'Musik berhenti'}>{Array.from({length:16},(_,i)=><i key={i} style={{'--bar':`${5+(i*13)%17}px`}}/>)}</div>
           </div>
-          <div className={`music-visualizer ${playing?'active':''}`} aria-label={playing?'Musik sedang diputar':'Musik berhenti'}>{Array.from({length:24},(_,i)=><i key={i} style={{'--bar':`${8+(i*17)%19}px`}}/>)}</div>
         </div>
-        <div className="audio-dock" aria-label="Kontrol pemutar musik">
-          <button title={muted?'Aktifkan suara':'Matikan suara'} onClick={handleVolume} disabled={!canControlVolume} aria-label={muted?'Aktifkan suara':'Matikan suara'}>{muted||volume===0?<VolumeX size={17}/>:<Volume2 size={17}/>}</button>
-          <input className="volume-range" aria-label="Volume musik" type="range" min="0" max="1" step="0.01" value={muted?0:volume} disabled={!canControlVolume} onChange={e=>{setVolume(Number(e.target.value));setMuted(false)}} />
-          <button title={playing?'Pause':'Putar musik'} disabled={!audioAvailable} onClick={togglePlayback} aria-label={playing?'Pause':'Putar musik'}>{playing?<span className="pause-mark">Ⅱ</span>:<Play size={17}/>}</button>
-          <button title="Lagu berikutnya" disabled={!currentTrack||albumTracks.length<2} onClick={nextTrack} aria-label="Lagu berikutnya"><SkipForward size={17}/></button>
+        <div className="music-progress-wrap">
+          <input className="music-progress" type="range" min="0" max={audioDuration||0} step="1" value={Math.min(audioTime,audioDuration||0)} disabled={!audioDuration} aria-label="Posisi lagu" onChange={event=>{const value=Number(event.target.value);setAudioTime(value);if(audioRef.current)audioRef.current.currentTime=value}} />
+          <div className="music-time-labels"><span>{formatTime(audioTime)}</span><span>{formatTime(audioDuration)}</span></div>
+        </div>
+        <div className="music-control-row">
+          <div className="music-transport">
+            <button type="button" title="Lagu sebelumnya" aria-label="Lagu sebelumnya" disabled={!currentTrack||albumTracks.length<2} onClick={previousTrack}><SkipBack size={18}/></button>
+            <button type="button" className="music-main-play" title={playing?'Jeda':'Putar'} aria-label={playing?'Jeda musik':'Putar musik'} disabled={!audioAvailable} onClick={togglePlayback}>{playing?<Pause size={20} fill="currentColor"/>:<Play size={20} fill="currentColor"/>}</button>
+            <button type="button" title="Lagu berikutnya" aria-label="Lagu berikutnya" disabled={!currentTrack||albumTracks.length<2} onClick={nextTrack}><SkipForward size={18}/></button>
+          </div>
+          <div className="music-volume-control">
+            <button type="button" title={muted?'Aktifkan suara':'Matikan suara'} aria-label={muted?'Aktifkan suara':'Matikan suara'} disabled={!audioAvailable} onClick={handleVolume}>{muted||volume===0?<VolumeX size={17}/>:<Volume2 size={17}/>}</button>
+            <input className="volume-range" aria-label="Volume musik" type="range" min="0" max="1" step="0.01" value={muted?0:volume} disabled={!audioAvailable} onChange={event=>{setVolume(Number(event.target.value));setMuted(false)}} />
+          </div>
+        </div>
+        <div className="music-library-selects">
+          <label><span>ALBUM</span><select aria-label="Pilih album" value={selectedAlbum} onChange={selectAlbum} disabled={!musicAlbums.length}>{musicAlbums.map(album=><option key={album.name} value={album.name}>{album.name}</option>)}</select></label>
+          <label><span>LAGU</span><select aria-label="Pilih lagu" value={currentTrack?.id||''} onChange={selectTrack} disabled={!albumTracks.length}>{albumTracks.map(track=><option key={track.id} value={track.id}>{track.title}</option>)}</select></label>
         </div>
       </div>}
-      <audio ref={audioRef} preload="none" onPlay={()=>setPlaying(true)} onTimeUpdate={e=>{const a=e.currentTarget;try{if(navigator.mediaSession?.setPositionState&&Number.isFinite(a.duration)&&a.duration>0)navigator.mediaSession.setPositionState({duration:a.duration,playbackRate:a.playbackRate,position:a.currentTime})}catch{}}} onEnded={()=>{if(albumTracks.length>1)nextTrack();else setPlaying(false)}} onError={()=>setPlaying(false)} />
+      <audio ref={audioRef} preload="none" onPlay={()=>setPlaying(true)} onTimeUpdate={e=>{const a=e.currentTarget;setAudioTime(a.currentTime);try{if(navigator.mediaSession?.setPositionState&&Number.isFinite(a.duration)&&a.duration>0)navigator.mediaSession.setPositionState({duration:a.duration,playbackRate:a.playbackRate,position:a.currentTime})}catch{}}} onLoadedMetadata={event=>setAudioDuration(Number.isFinite(event.currentTarget.duration)?event.currentTarget.duration:0)} onEnded={()=>{if(albumTracks.length>1)nextTrack();else setPlaying(false)}} onError={()=>setPlaying(false)} />
       <button className="menu-toggle" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Buka menu informasi">{menuOpen?<X/>:<Menu/>}</button>
     </header>
 
