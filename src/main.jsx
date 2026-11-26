@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { PhotoHdModal, Mp4ToMp3Modal } from './media-tools.jsx'
 import { MusicSearchModal } from './music-search.jsx'
+import { MusicProviderPlayer } from './music-provider.jsx'
 import './style.css'
 import { heroVideo } from './media.js'
 
@@ -42,7 +43,7 @@ const tools = [
   { id:'ssl', name:'Certificate Transparency', desc:'Cari catatan sertifikat TLS publik untuk domain.', category:'Security Lab', icon:LockKeyhole, tag:'API' },
   { id:'socialdownloader', name:'Social Media Downloader', desc:'Unduh video publik TikTok dan Instagram.', category:'Downloader', icon:DownloadCloud, tag:'API' },
   { id:'lyricssearch', name:'Lyrics Finder', desc:'Cari lirik lagu berdasarkan judul dan nama artis.', category:'Online Tools', icon:Music2, tag:'API' },
-  { id:'musiclistener', name:'Music Listener', desc:'Cari lagu berdasarkan judul dan dengarkan preview resminya.', category:'Online Tools', icon:Music2, tag:'API' },
+  { id:'musiclistener', name:'Music Listener', desc:'Putar lagu lewat URL YouTube atau Spotify.', category:'Online Tools', icon:Music2, tag:'API' },
 ]
 const categories = ['All','Downloader','Maker','Tools']
 const categoryFor = (tool) => {
@@ -57,34 +58,49 @@ function App(){
   const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false)
   const [menuOpen,setMenuOpen]=useState(false), [musicPanelOpen,setMusicPanelOpen]=useState(false), [infoPage,setInfoPage]=useState(null), [playing,setPlaying]=useState(false), [trackIndex,setTrackIndex]=useState(0)
   const [tracks,setTracks]=useState([]), [volume,setVolume]=useState(0.72), [muted,setMuted]=useState(false)
-  const [musicMode,setMusicMode]=useState('web'), [toolSession,setToolSession]=useState(null)
+  const [musicMode,setMusicMode]=useState('web'), [toolSession,setToolSession]=useState(null), [providerError,setProviderError]=useState('')
   const [audioTime,setAudioTime]=useState(0), [audioDuration,setAudioDuration]=useState(0)
-  const audioRef=useRef(null)
+  const audioRef=useRef(null), providerControllerRef=useRef(null)
   useEffect(()=>{let active=true;fetch('/media/playlist.json').then(r=>{if(!r.ok)throw new Error('playlist unavailable');return r.json()}).then(data=>{if(active)setTracks(Array.isArray(data.tracks)?data.tracks.filter(t=>t&&typeof t.src==='string'&&t.src.trim()):[])}).catch(()=>{if(active)setTracks([])});return()=>{active=false}},[])
   const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
   const [onlyFav,setOnlyFav]=useState(false)
   const searchRef=useRef(null)
   const currentTrack=tracks.length?tracks[trackIndex%tracks.length]:null
-  useEffect(()=>{const audio=audioRef.current;if(!audio)return;audio.volume=volume;audio.muted=muted},[volume,muted])
+  useEffect(()=>{const audio=audioRef.current;if(audio){audio.volume=volume;audio.muted=muted}if(musicMode==='tool'&&toolSession?.kind==='provider')providerControllerRef.current?.setVolume?.(muted?0:volume)},[volume,muted,musicMode,toolSession])
   useEffect(()=>{
     const audio=audioRef.current;if(!audio)return
-    const source=musicMode==='tool'?toolSession?.src:currentTrack?.src
-    if(!source){audio.pause();audio.removeAttribute('src');audio.load();if(playing)setPlaying(false);return}
+    const source=musicMode==='tool'?'':currentTrack?.src
+    if(!source){audio.pause();audio.removeAttribute('src');audio.load();if(playing&&toolSession?.kind!=='provider')setPlaying(false);return}
     const resolved=new URL(source,document.baseURI).href
     if(audio.src!==resolved){audio.pause();audio.src=source;audio.load();setAudioTime(0)}
     if(playing){if(audio.paused)audio.play().catch(()=>setPlaying(false))}else if(!audio.paused)audio.pause()
   },[musicMode,toolSession,currentTrack,playing])
   const activeMusic=musicMode==='tool'?toolSession:currentTrack
-  const audioAvailable=musicMode==='tool'?toolSession?.kind==='audio':!!currentTrack
-  const togglePlayback=async()=>{const audio=audioRef.current;if(!audio||!audioAvailable)return;if(audio.paused){try{await audio.play()}catch{setPlaying(false)}}else{audio.pause();setPlaying(false)}}
+  const audioAvailable=musicMode==='tool'?toolSession?.kind==='provider':!!currentTrack
+  const canControlVolume=audioAvailable&&!(musicMode==='tool'&&toolSession?.provider==='Spotify')
+  const togglePlayback=async()=>{
+    if(musicMode==='tool'&&toolSession?.kind==='provider'){
+      const controller=providerControllerRef.current;if(!controller)return
+      try{if(playing){controller.pause();setPlaying(false)}else{controller.play();setPlaying(true)}}catch{setPlaying(false)}
+      return
+    }
+    const audio=audioRef.current;if(!audio||!audioAvailable)return
+    if(audio.paused){try{await audio.play()}catch{setPlaying(false)}}else{audio.pause();setPlaying(false)}
+  }
   const nextTrack=()=>{if(!tracks.length||musicMode!=='web')return;setTrackIndex(i=>(i+1)%tracks.length)}
   const previousTrack=()=>{if(!tracks.length||musicMode!=='web')return;setTrackIndex(i=>(i-1+tracks.length)%tracks.length)}
-  const startToolAudio=(session)=>{
-    const audio=audioRef.current;if(!audio)return
-    setToolSession({...session,kind:'audio'});setMusicMode('tool');setMusicPanelOpen(true);setMuted(false);setPlaying(true)
-    audio.pause();audio.src=session.src;audio.load();audio.volume=volume;audio.muted=false;audio.play().catch(()=>setPlaying(false))
+  const startToolProvider=(session)=>{
+    const audio=audioRef.current;if(audio){audio.pause();audio.removeAttribute('src');audio.load()}
+    providerControllerRef.current=null;setProviderError('')
+    setToolSession({...session,kind:'provider',sessionKey:Date.now()});setMusicMode('tool');setMusicPanelOpen(true);setMuted(false);setPlaying(false)
+  }
+  const handleProviderReady=controller=>{providerControllerRef.current=controller;controller.setVolume?.(muted?0:volume)}
+  const handleProviderState=(isPlaying,time,duration)=>{
+    setPlaying(isPlaying);setAudioTime(time||0);setAudioDuration(duration||0)
+    try{if(navigator.mediaSession?.setPositionState&&duration>0)navigator.mediaSession.setPositionState({duration,playbackRate:1,position:Math.min(time||0,duration)})}catch{}
   }
   const resumeWebMusic=()=>{
+    providerControllerRef.current=null
     setToolSession(null);setMusicMode('web');setMusicPanelOpen(true)
     if(currentTrack&&audioRef.current){const audio=audioRef.current;audio.src=currentTrack.src;audio.load();audio.play().then(()=>setPlaying(true)).catch(()=>setPlaying(false))}
   }
@@ -96,9 +112,9 @@ function App(){
       media.playbackState=audioAvailable?(playing?'playing':'paused'):'none'
     }catch{}
     const action=(name,handler)=>{try{media.setActionHandler(name,handler)}catch{}}
-    action('play',()=>audio?.play().then(()=>setPlaying(true)).catch(()=>{}))
-    action('pause',()=>{audio?.pause();setPlaying(false)})
-    action('seekto',details=>{if(audio&&Number.isFinite(details.seekTime))audio.currentTime=details.seekTime})
+    action('play',()=>{if(musicMode==='tool'&&toolSession?.kind==='provider')providerControllerRef.current?.play();else audio?.play().then(()=>setPlaying(true)).catch(()=>{})})
+    action('pause',()=>{if(musicMode==='tool'&&toolSession?.kind==='provider')providerControllerRef.current?.pause();else audio?.pause();setPlaying(false)})
+    action('seekto',details=>{if(!Number.isFinite(details.seekTime))return;if(musicMode==='tool'&&toolSession?.kind==='provider')providerControllerRef.current?.seek(details.seekTime);else if(audio)audio.currentTime=details.seekTime})
     action('nexttrack',()=>{if(musicMode==='web')nextTrack()})
     action('previoustrack',()=>{if(musicMode==='web')previousTrack()})
     return()=>['play','pause','seekto','nexttrack','previoustrack'].forEach(name=>action(name,null))
@@ -121,12 +137,12 @@ function App(){
         <button className={`info-trigger music-trigger ${playing?'is-playing':''}`} onClick={togglePlayback} aria-label={playing?'Jeda musik':'Putar musik'} title={playing?'Jeda musik':'Putar musik'} disabled={!audioAvailable}>{playing?<AudioLines/>:<Play/>}</button>
         <div className="header-info music-track-info">
           <strong>{activeMusic?.title||'Music Player'}</strong>
-          <span>{activeMusic?(activeMusic.artist||activeMusic.provider||'Music tool'):musicMode==='tool'?'Pilih player untuk mulai':'Tambahkan lagu ke public/media/playlist.json'}</span>
+          <span>{providerError|| (activeMusic?(activeMusic.artist||activeMusic.provider||'Music tool'):musicMode==='tool'?'Pilih player untuk mulai':'Tambahkan lagu ke public/media/playlist.json')}</span>
           <div className={`music-visualizer ${playing?'active':''}`} aria-label={playing?'Musik sedang diputar':'Musik berhenti'}>{Array.from({length:24},(_,i)=><i key={i} style={{'--bar':`${8+(i*17)%19}px`}}/>)}</div>
         </div>
         <div className="audio-dock" aria-label="Kontrol pemutar musik">
-          <button title={muted?'Aktifkan suara':'Matikan suara'} onClick={handleVolume} disabled={!audioAvailable} aria-label={muted?'Aktifkan suara':'Matikan suara'}>{muted||volume===0?<VolumeX size={17}/>:<Volume2 size={17}/>}</button>
-          <input className="volume-range" aria-label="Volume musik" type="range" min="0" max="1" step="0.01" value={muted?0:volume} disabled={!audioAvailable} onChange={e=>{setVolume(Number(e.target.value));setMuted(false)}} />
+          <button title={muted?'Aktifkan suara':'Matikan suara'} onClick={handleVolume} disabled={!canControlVolume} aria-label={muted?'Aktifkan suara':'Matikan suara'}>{muted||volume===0?<VolumeX size={17}/>:<Volume2 size={17}/>}</button>
+          <input className="volume-range" aria-label="Volume musik" type="range" min="0" max="1" step="0.01" value={muted?0:volume} disabled={!canControlVolume} onChange={e=>{setVolume(Number(e.target.value));setMuted(false)}} />
           <button title={playing?'Pause':'Putar musik'} disabled={!audioAvailable} onClick={togglePlayback} aria-label={playing?'Pause':'Putar musik'}>{playing?<span className="pause-mark">Ⅱ</span>:<Play size={17}/>}</button>
           {musicMode==='tool'&&currentTrack&&<button title="Kembali ke musik website" onClick={resumeWebMusic} aria-label="Kembali ke musik website"><Music2 size={16}/></button>}
           <button title="Lagu berikutnya" disabled={!currentTrack||tracks.length<2||musicMode!=='web'} onClick={nextTrack} aria-label="Lagu berikutnya"><SkipForward size={17}/></button>
@@ -135,6 +151,7 @@ function App(){
       <audio ref={audioRef} preload="none" onPlay={()=>setPlaying(true)} onTimeUpdate={e=>{const a=e.currentTarget;setAudioTime(a.currentTime);try{if(navigator.mediaSession?.setPositionState&&Number.isFinite(a.duration)&&a.duration>0)navigator.mediaSession.setPositionState({duration:a.duration,playbackRate:a.playbackRate,position:a.currentTime})}catch{}}} onLoadedMetadata={e=>setAudioDuration(Number.isFinite(e.currentTarget.duration)?e.currentTarget.duration:0)} onEnded={()=>{if(musicMode==='web'&&tracks.length>1)nextTrack();else setPlaying(false)}} onError={()=>setPlaying(false)} />
       <button className="menu-toggle" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Buka menu informasi">{menuOpen?<X/>:<Menu/>}</button>
     </header>
+    {musicMode==='tool'&&toolSession?.kind==='provider'&&<MusicProviderPlayer key={toolSession.sessionKey||toolSession.id} provider={toolSession.provider} mediaId={toolSession.mediaId} volume={muted?0:volume} onReady={handleProviderReady} onState={handleProviderState} onError={setProviderError}/>}
     {menuOpen&&<div className="info-panel"><div className="panel-heading"><div><b>NEXUS MENU</b><span>Informasi dan masukan</span></div><span className="online-pill"><i/> ONLINE</span></div>
       <button className="info-card" onClick={()=>{setMenuOpen(false);setInfoPage('about')}}><span className="info-icon"><UserRound/></span><span><b>About Dev</b><small>Profil developer dan kontak resmi.</small></span><ArrowUpRight/></button>
       <a className="info-card" href="https://whatsapp.com/channel/0029VbBmeKA002TCQOFuo61s" target="_blank" rel="noreferrer"><span className="info-icon"><CircleHelp/></span><span><b>Report Bug, Saran & Ide</b><small>Kirim masukan melalui saluran WhatsApp.</small></span><ExternalLink/></a>
@@ -151,7 +168,7 @@ function App(){
         {filtered.length?<div className="tool-grid">{filtered.map((t,index)=><ToolCard key={t.id} index={index} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
     </main>
-    {selected&&((selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>:selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='photohd'?<PhotoHdModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='mp4mp3'?<Mp4ToMp3Modal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='musiclistener'?<MusicSearchModal key={selected.id} onClose={()=>setSelected(null)} activeSession={toolSession} onStartAudio={startToolAudio}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
+    {selected&&((selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>:selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='photohd'?<PhotoHdModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='mp4mp3'?<Mp4ToMp3Modal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='musiclistener'?<MusicSearchModal key={selected.id} onClose={()=>setSelected(null)} activeSession={toolSession} providerError={providerError} onStartProvider={startToolProvider}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
   </div>
 }
 function InfoPage({page,onClose}){
