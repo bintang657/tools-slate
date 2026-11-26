@@ -43,12 +43,13 @@ const tools = [
   { id:'ssl', name:'Certificate Transparency', desc:'Cari catatan sertifikat TLS publik untuk domain.', category:'Security Lab', icon:LockKeyhole, tag:'API' },
   { id:'socialdownloader', name:'Social Media Downloader', desc:'Unduh video publik TikTok dan Instagram.', category:'Downloader', icon:DownloadCloud, tag:'API' },
   { id:'lyricssearch', name:'Lyrics Finder', desc:'Cari lirik lagu berdasarkan judul dan nama artis.', category:'Online Tools', icon:Music2, tag:'API' },
+  { id:'safelinku', name:'SafeLinkU Bypass', desc:'Ekstrak tujuan tautan yang tertanam secara lokal; tidak melewati iklan atau CAPTCHA.', category:'Online Tools', icon:Link2, tag:'New' },
 ]
 const categories = ['All','Downloader','Maker','Tools']
 const formatTime = value => {const seconds=Math.max(0,Math.floor(Number(value)||0));return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}
 const categoryFor = (tool) => {
   if (tool.category==='Downloader') return 'Downloader'
-  if (['weather','currency','ip','dns','ssl','breach','lyricssearch'].includes(tool.id)) return 'Tools'
+  if (['weather','currency','ip','dns','ssl','breach','lyricssearch','safelinku'].includes(tool.id)) return 'Tools'
   if (['qr','photohd','mp4mp3','color','markdown'].includes(tool.id)) return 'Maker'
   if (['json','base64','url','hash','uuid','regex','html','text','words','timestamp','unit','percentage','jwt','urlscan'].includes(tool.id)) return 'Tools'
   return 'Downloader'
@@ -333,6 +334,7 @@ function ToolModal({tool,onClose}){
  case 'dns':{const host=normalizeHost(value);if(!host)throw Error('Masukkan domain, misalnya example.org.');const type=extra||'A',d=await fetchJson(`https://dns.google/resolve?name=${encodeURIComponent(host)}&type=${type}`);const answers=d.Answer||[];out=`Domain: ${host}\nRecord: ${type}\nStatus DNS: ${dnsStatus(d.Status)}\n\n${answers.length?answers.map(a=>`${a.name}  ${a.TTL}s  ${a.data}`).join('\n'):'Tidak ada record yang dikembalikan.'}`;break}
  case 'jwt':{const parts=value.trim().split('.');if(parts.length!==3)throw Error('JWT harus memiliki tiga bagian yang dipisahkan titik.');const header=JSON.parse(decodeBase64Url(parts[0])),payload=JSON.parse(decodeBase64Url(parts[1]));out=`HEADER\n${JSON.stringify(header,null,2)}\n\nPAYLOAD\n${JSON.stringify(payload,null,2)}\n\nSIGNATURE\n${parts[2]||'(kosong)'}\n\nCatatan: decode tidak memverifikasi tanda tangan token.`;break}
  case 'breach':{if(!value)throw Error('Masukkan password untuk diperiksa.');const hash=await digestHex('SHA-1',value),prefix=hash.slice(0,5),suffix=hash.slice(5);const response=await fetch(`https://api.pwnedpasswords.com/range/${prefix}`,{headers:{'Add-Padding':'true'},signal:AbortSignal.timeout(15000)});if(!response.ok)throw Error(`HIBP API error (${response.status}).`);const rows=(await response.text()).split(/\r?\n/),match=rows.find(row=>row.split(':')[0]?.toUpperCase()===suffix.toUpperCase());const count=match?Number(match.split(':')[1]):0;out=match?`STATUS: FOUND\nPassword ditemukan dalam dataset Pwned Passwords.\nJumlah kemunculan: ${count.toLocaleString('id-ID')}\n\nGanti password tersebut dan jangan gunakan ulang di layanan lain.`:'STATUS: NOT FOUND\nTidak ditemukan dalam dataset Pwned Passwords yang diperiksa.';out+='\n\nPrivasi: password di-hash di perangkat. Hanya 5 karakter awal hash yang dikirim; pencocokan akhir dilakukan di browser.';break}
+ case 'safelinku':{const input=value.trim();if(!input)throw Error('Tempel URL SafeLinkU terlebih dahulu.');let shortUrl;try{shortUrl=new URL(input.includes('://')?input:`https://${input}`)}catch{throw Error('Format URL tidak valid.')}if(!['http:','https:'].includes(shortUrl.protocol)||!(shortUrl.hostname==='safelinku.com'||shortUrl.hostname.endsWith('.safelinku.com')))throw Error('Masukkan URL dengan domain safelinku.com yang valid.');const destination=extractSafeLinkDestination(shortUrl);if(!destination)throw Error('Tujuan tidak tertanam sebagai URL yang dapat dibaca. Link ini mungkin memerlukan proses resmi SafeLinkU; tool ini tidak melewati iklan, CAPTCHA, login, atau pemeriksaan akses.');setResult({safelinku:destination});out=`Tujuan yang tertanam berhasil ditemukan:\n${destination}\n\nPeriksa nama domain sebelum membuka. Tool ini membaca URL secara lokal dan tidak melewati iklan, CAPTCHA, atau pemeriksaan akses.`;break}
  case 'urlscan':{let u;try{u=new URL(value.includes('://')?value:`https://${value}`)}catch{throw Error('Format URL tidak valid.')}const rows=[['URL',u.href],['Protocol',u.protocol],['Hostname',u.hostname],['Port',u.port||'(default)'],['Path',u.pathname||'/'],['Query parameters',String([...u.searchParams.keys()].length)],['HTTPS',u.protocol==='https:'?'Ya':'Tidak'],['Credentials in URL',u.username||u.password?'Ada':'Tidak'],['Punycode hostname',u.hostname.startsWith('xn--')||u.hostname.includes('.xn--')?'Perlu diperiksa':'Tidak terdeteksi']];out=rows.map(([k,v])=>`${k}: ${v}`).join('\n')+'\n\nAnalisis ini bersifat lokal dan bukan verdict reputasi atau pemindaian malware.';break}
  case 'ssl':{const host=normalizeHost(value);if(!host)throw Error('Masukkan nama domain.');const d=await fetchJson(`/api/cert-transparency?domain=${encodeURIComponent(host)}`);const rows=Array.isArray(d)?d.slice(0,25):[];out=`Domain query: ${host}\nCatatan sertifikat ditemukan: ${Array.isArray(d)?d.length:0}\nMenampilkan maksimal 25 catatan terbaru:\n\n${rows.map(x=>`${x.not_before||'—'} | ${x.common_name||x.name_value||'—'} | ${x.issuer_name||'Issuer tidak tersedia'}`).join('\n')||'Tidak ada catatan yang dikembalikan.'}\n\nCertificate Transparency mencatat sertifikat yang diterbitkan secara publik; hasil bukan pemeriksaan validitas sertifikat saat ini.`;break}
  default:throw Error('Tool belum tersedia.')}
@@ -340,7 +342,7 @@ function ToolModal({tool,onClose}){
  }catch(e){setError(e.message||'Terjadi kesalahan.')}finally{setBusy(false)}}
  const copy=()=>navigator.clipboard?.writeText(output).then(()=>setError('Hasil disalin ke clipboard.')).catch(()=>setError('Clipboard tidak tersedia.'))
  const download=()=>{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([output],{type:'text/plain;charset=utf-8'}));a.href=url;a.download=`tools-slate-${tool.id}-result.txt`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
- const placeholders={json:'Tempel JSON di sini...',base64:'Masukkan teks atau Base64...',url:'Masukkan URL atau teks...',hash:'Masukkan teks untuk di-hash...',uuid:'Jumlah UUID (default 1)',regex:'Regular expression, contoh: \\w+',html:'Masukkan HTML atau teks...',text:'Ketik atau tempel teks...',words:'Tempel teks untuk dihitung...',timestamp:'Masukkan timestamp atau tanggal ISO...',unit:'Masukkan angka...',percentage:'Angka pertama...',color:'#6750A4',markdown:'## Halo!\nTulis **Markdown** di sini...',qr:'Masukkan teks atau URL...',weather:'Masukkan nama kota, contoh: Surabaya',currency:'Masukkan jumlah...',ip:'Kosongkan untuk IP publik kamu, atau masukkan IP...',dns:'Masukkan domain, contoh: example.org',jwt:'Tempel JWT di sini...',breach:'Masukkan password yang ingin diperiksa...',urlscan:'Masukkan URL, contoh: https://example.org',ssl:'Masukkan domain, contoh: example.org'}
+ const placeholders={json:'Tempel JSON di sini...',base64:'Masukkan teks atau Base64...',url:'Masukkan URL atau teks...',hash:'Masukkan teks untuk di-hash...',uuid:'Jumlah UUID (default 1)',regex:'Regular expression, contoh: \\w+',html:'Masukkan HTML atau teks...',text:'Ketik atau tempel teks...',words:'Tempel teks untuk dihitung...',timestamp:'Masukkan timestamp atau tanggal ISO...',unit:'Masukkan angka...',percentage:'Angka pertama...',color:'#6750A4',markdown:'## Halo!\nTulis **Markdown** di sini...',qr:'Masukkan teks atau URL...',weather:'Masukkan nama kota, contoh: Surabaya',currency:'Masukkan jumlah...',ip:'Kosongkan untuk IP publik kamu, atau masukkan IP...',dns:'Masukkan domain, contoh: example.org',jwt:'Tempel JWT di sini...',breach:'Masukkan password yang ingin diperiksa...',urlscan:'Masukkan URL, contoh: https://example.org',safelinku:'Tempel URL safelinku.com di sini...',ssl:'Masukkan domain, contoh: example.org'}
  const isTextArea=!['uuid','timestamp','unit','percentage','color','weather','currency','ip','dns','ssl','breach'].includes(tool.id)
  return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal" role="dialog" aria-modal="true" aria-labelledby="tool-dialog-title"><div className="modal-head"><div className="modal-title"><span className="tool-icon"><Icon size={20}/></span><div><h2 id="tool-dialog-title">{tool.name}</h2><p>{tool.desc}</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Close"><X/></button></div>
  <div className="modal-body">{isTextArea?<textarea className="work-area" value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholders[tool.id]}/>:<input className="single-input" value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholders[tool.id]} type={tool.id==='breach'?'password':'text'} autoComplete="off"/>}
@@ -356,6 +358,7 @@ function ToolModal({tool,onClose}){
  {error&&<div className={`notice ${error.includes('disalin')?'success':''}`}>{error}</div>}
  {output&&<div className="output-wrap"><div className="output-head"><span>OUTPUT</span><div><button onClick={copy}><Copy size={14}/> Copy</button><button onClick={download}><Download size={14}/> Save</button></div></div><pre>{output}</pre></div>}
  {result?.qr&&<div className="qr-result"><img src={result.qr} alt="Generated QR code"/><a href={result.qr} download="tools-slate-qr.png" target="_blank" rel="noreferrer"><Download size={15}/> Open / save QR</a></div>}
+ {result?.safelinku&&<div className="safelinku-result"><div><Link2 size={17}/><span><b>Tujuan ditemukan</b><small>Pastikan domain tujuan aman sebelum membuka.</small></span></div><code>{result.safelinku}</code><a href={result.safelinku} target="_blank" rel="noopener noreferrer">Buka tujuan <ExternalLink size={15}/></a></div>}
  {result?.color&&<div className="output-wrap"><div className="output-head"><span>COLOR VALUES</span><button onClick={copy}><Copy size={14}/> Copy</button></div><pre>{output}</pre></div>}
  {tool.id==='markdown'&&<div className="markdown-preview"><div className="output-head"><span>LIVE PREVIEW</span></div><div dangerouslySetInnerHTML={{__html:markdownLite(value)}}/></div>}
  </div></section></div>
@@ -454,6 +457,46 @@ async function digestHex(algo,value){const bytes=new TextEncoder().encode(value)
 function encodeUtf8(s){const bytes=new TextEncoder().encode(s);let bin='';bytes.forEach(b=>bin+=String.fromCharCode(b));return btoa(bin)}
 function decodeUtf8(s){const bin=atob(s.trim()),bytes=Uint8Array.from(bin,c=>c.charCodeAt(0));return new TextDecoder().decode(bytes)}
 function decodeBase64Url(s){const normalized=s.replace(/-/g,'+').replace(/_/g,'/');return decodeUtf8(normalized.padEnd(Math.ceil(normalized.length/4)*4,'='))}
+function extractSafeLinkDestination(shortUrl){
+ const allowedKeys=new Set(['url','target','target_url','dest','dest_url','destination','redirect','redirect_url','redirectto','link','linkto','to','r','u','data','encoded','adurl','continue','out','fragment','segment'])
+ const isSafeLink=host=>host==='safelinku.com'||host.endsWith('.safelinku.com')
+ const nestedValues=url=>{
+  const entries=[...url.searchParams.entries(),...url.pathname.split('/').filter(Boolean).map(segment=>['segment',segment])]
+  const fragment=url.hash.slice(1)
+  if(fragment){
+   entries.push(['fragment',fragment])
+   try{entries.push(...new URLSearchParams(fragment.replace(/^[?&]/,'')).entries())}catch{}
+  }
+  return entries.filter(([key])=>allowedKeys.has(key.toLowerCase())).map(([,value])=>value)
+ }
+ const inspect=(candidate,depth=0)=>{
+  if(depth>4||typeof candidate!=='string'||candidate.length>12000)return null
+  const variants=new Set([candidate.trim()])
+  let decoded=candidate.trim()
+  for(let i=0;i<2;i++){try{const next=decodeURIComponent(decoded);if(next===decoded)break;decoded=next;variants.add(decoded)}catch{break}}
+  for(const current of variants){
+   const matches=[...(current.match(/https?:\/\/[^\s"'<>]+/gi)||[])]
+   if(/^https?:\/\//i.test(current))matches.unshift(current)
+   for(const match of matches){
+    const cleaned=match.replace(/[),.;]+$/,'')
+    try{
+     const url=new URL(cleaned)
+     if(!['http:','https:'].includes(url.protocol)||url.username||url.password)continue
+     if(isSafeLink(url.hostname)){
+      for(const nested of nestedValues(url)){const result=inspect(nested,depth+1);if(result)return result}
+     }else return url.href
+    }catch{}
+   }
+   const base64=current.replace(/ /g,'+')
+   if(base64.length>=12&&base64.length<=12000&&/^[A-Za-z0-9+/_=-]+$/.test(base64)){
+    try{const unpacked=decodeBase64Url(base64);if(unpacked!==current){const result=inspect(unpacked,depth+1);if(result)return result}}catch{}
+   }
+  }
+  return null
+ }
+ for(const candidate of nestedValues(shortUrl)){const destination=inspect(candidate);if(destination)return destination}
+ return null
+}
 function normalizeHost(s){let h=s.trim().replace(/^https?:\/\//i,'').split(/[/?#:]/)[0].toLowerCase();if(!/^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(h))return '';return h}
 function dnsStatus(n){return ({0:'NOERROR',1:'FORMERR',2:'SERVFAIL',3:'NXDOMAIN',4:'NOTIMP',5:'REFUSED'})[n]||`Code ${n}`}
 function rgbToHsl(r,g,b){r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,l=(max+min)/2;if(max===min)h=s=0;else{const d=max-min;s=l>.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;default:h=(r-g)/d+4}h*=60}return[h,s*100,l*100]}
