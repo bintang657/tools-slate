@@ -236,14 +236,53 @@ async function bypassSafelinkEngine(targetUrl, initialHtml, jar) {
   return readyUrl;
 }
 
+const SHORTENER_HOSTS = [
+  'sfl.gl',
+  'safelinku.com',
+  'safelinku.net',
+  'khaddavi.net',
+  'app.khaddavi.net',
+  'tutwuri.id',
+  'adlinksumo.com',
+  'clk.ink',
+  'linkduit.net',
+  'link2unlock.com',
+  'sub2unlock.com',
+  'sub4unlock.com',
+];
+
+function isShortenerHost(hostname) {
+  const h = String(hostname || '')
+    .toLowerCase()
+    .replace(/^www\./, '');
+  return SHORTENER_HOSTS.some((d) => h === d || h.endsWith(`.${d}`));
+}
+
+function isCloudflareChallenge(html, status) {
+  if (status === 403 || status === 503) return true;
+  const h = String(html || '').toLowerCase();
+  return (
+    h.includes('just a moment') ||
+    h.includes('cf-mitigated') ||
+    h.includes('challenge-platform') ||
+    h.includes('cdn-cgi/challenge') ||
+    h.includes('cf-browser-verification') ||
+    h.includes('_cf_chl_opt')
+  );
+}
+
 function extractDirectRedirect(html, baseUrl) {
-  const meta = html.match(/<meta[^>]+http-equiv=["']refresh["'][^>]+content=["'][^"']*url=([^"';>]+)/i);
+  const meta = html.match(
+    /<meta[^>]+http-equiv=["']refresh["'][^>]+content=["'][^"']*url=([^"';>]+)/i
+  );
   if (meta) return new URL(meta[1].trim().replace(/['"]/g, ''), baseUrl).href;
 
   const loc = html.match(/window\.location(?:\.href)?\s*=\s*["']([^"']+)["']/i);
   if (loc) return new URL(loc[1].replace(/\\\//g, '/'), baseUrl).href;
 
-  const href = html.match(/href=["'](https?:\/\/[^"']+)["'][^>]*(?:get\s*link|lanjut|continue|open\s*link)/i);
+  const href = html.match(
+    /href=["'](https?:\/\/[^"']+)["'][^>]*(?:get\s*link|lanjut|continue|open\s*link)/i
+  );
   if (href) return href[1];
 
   return null;
@@ -252,6 +291,7 @@ function extractDirectRedirect(html, baseUrl) {
 async function resolveChain(initialUrl) {
   let currentUrl = initialUrl.trim();
   if (!/^https?:\/\//i.test(currentUrl)) currentUrl = 'https://' + currentUrl;
+  const sourceUrl = currentUrl;
 
   const visited = new Set();
   const hops = [];
@@ -268,8 +308,9 @@ async function resolveChain(initialUrl) {
     } catch {
       break;
     }
-    if (!isAllowedHost(hostname) && hop > 1) {
-      // final destination outside shortener network — done
+
+    // Outside shortener network after at least one hop → real destination
+    if (!isShortenerHost(hostname) && hop > 1) {
       return { destination: currentUrl, hops };
     }
 
@@ -279,13 +320,19 @@ async function resolveChain(initialUrl) {
       res = await fetchWithJar(currentUrl, {}, jar);
     } catch (err) {
       if (hop === 1) throw err;
-      return { destination: currentUrl, hops };
+      break;
     }
 
     const html = await res.text();
     const finalUrl = res.url;
 
-    // try the sfl-engine form flow first
+    if (isCloudflareChallenge(html, res.status)) {
+      throw new Error(
+        'Cloudflare memblokir request server (challenge). Buka link di browser sampai lewat halaman “Just a moment”, salin URL di address bar, lalu tempel lagi di tool — atau pakai userscript Bypass SFL di browser untuk auto-klik sampai link tujuan (MediaFire, dll).'
+      );
+    }
+
+    // sfl engine: ray_id + alias form
     try {
       const unlocked = await bypassSafelinkEngine(finalUrl, html, jar);
       if (unlocked && unlocked !== finalUrl) {
@@ -293,7 +340,7 @@ async function resolveChain(initialUrl) {
         continue;
       }
     } catch {
-      // fall through to simpler extractors
+      // fall through
     }
 
     const direct = extractDirectRedirect(html, finalUrl);
@@ -302,8 +349,27 @@ async function resolveChain(initialUrl) {
       continue;
     }
 
-    // no more unlock path — treat as destination
+    // stuck on shortener without unlock path
+    if (isShortenerHost(new URL(finalUrl).hostname)) {
+      throw new Error(
+        'Masih di halaman shortener — link tujuan belum terbuka. sfl.gl dilindungi Cloudflare; request dari server tidak bisa menyelesaikan challenge. Buka di browser, lewati iklan/captcha, lalu salin URL tujuan (MediaFire/Drive/dll) dari address bar.'
+      );
+    }
+
     return { destination: finalUrl, hops };
+  }
+
+  // final guard: never report source or shortener as success
+  try {
+    const destHost = new URL(currentUrl).hostname;
+    if (currentUrl === sourceUrl || isShortenerHost(destHost)) {
+      throw new Error(
+        'Tidak berhasil mengekstrak link tujuan. sfl.gl memakai Cloudflare; bypass penuh butuh sesi browser. Buka link di browser sampai muncul file host (MediaFire, dll), lalu salin URL itu.'
+      );
+    }
+  } catch (e) {
+    if (e.message && e.message.includes('Cloudflare') || e.message.includes('Tidak berhasil') || e.message.includes('Masih di')) throw e;
+    throw new Error('Tidak berhasil mengekstrak link tujuan.');
   }
 
   return { destination: currentUrl, hops };
