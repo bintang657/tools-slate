@@ -1,3 +1,4 @@
+// language: JSX, file: src/main.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import {
@@ -670,6 +671,7 @@ function normalizeHost(s){let h=s.trim().replace(/^https?:\/\//i,'').split(/[/?#
 function dnsStatus(n){return ({0:'NOERROR',1:'FORMERR',2:'SERVFAIL',3:'NXDOMAIN',4:'NOTIMP',5:'REFUSED'})[n]||`Code ${n}`}
 function rgbToHsl(r,g,b){r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,l=(max+min)/2;if(max===min)h=s=0;else{const d=max-min;s=l>.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;default:h=(r-g)/d+4}h*=60}return[h,s*100,l*100]}
 function weatherLabel(c){if(c===0)return 'Cerah';if(c<=3)return 'Berawan';if(c<=48)return 'Berkabut';if(c<=67)return 'Hujan';if(c<=77)return 'Salju';if(c<=82)return 'Hujan';if(c<=86)return 'Hujan salju';return 'Badai petir'}
+
 function escapeHtml(s) {
   return String(s)
     .replace(/&/g, '&amp;')
