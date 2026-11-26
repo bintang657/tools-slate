@@ -1,0 +1,37 @@
+name: Bypass Safelinku
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'URL Safelinku yang mau di-bypass'
+        required: true
+
+jobs:
+  bypass:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install playwright @actions/core
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Run Bypass Script
+        id: bypass
+        env:
+          TARGET_URL: ${{ github.event.inputs.url }}
+        run: node bypass-script.js
+
+      - name: Upload Result Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hasil-bypass
+          path: result.json
