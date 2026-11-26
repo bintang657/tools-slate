@@ -1450,12 +1450,3 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 .info-panel .panel-heading span { color: #a8c4d8; font-size: 14px; line-height: 1.5; }
 .info-panel .info-card > svg { color: #a9e6ff; }
 .info-panel .info-card.whatsapp .info-icon { color: #bdeaff; border-color: #8bc8e52b; background: linear-gradient(145deg, #1a3b55, #10253a); }
-
-.safelinku-result { display: grid; gap: 12px; margin-top: 16px; padding: 15px; border: 1px solid #8bc8e52b; border-radius: 15px; background: linear-gradient(135deg, #10263a, #0b1a2a); }
-.safelinku-result > div { display: flex; align-items: center; gap: 9px; color: #8de3ff; }
-.safelinku-result > div > span { display: grid; gap: 3px; }
-.safelinku-result b { color: #e3f6ff; font-size: 12px; }
-.safelinku-result small { color: #91a9bd; font-size: 10px; line-height: 1.5; }
-.safelinku-result code { overflow-wrap: anywhere; color: #a9e6ff; font: 11px/1.55 'DM Mono', monospace; }
-.safelinku-result a { display: inline-flex; justify-self: start; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid #5ecbf34a; border-radius: 9px; background: #12314a; color: #c7f2ff; font-size: 11px; font-weight: 700; text-decoration: none; }
-.safelinku-result a:hover { border-color: #7fdfff; background: #17405c; }
