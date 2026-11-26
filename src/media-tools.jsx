@@ -123,9 +123,21 @@ export function Mp4ToMp3Modal({ onClose }) {
       const AudioContextClass = window.AudioContext || window.webkitAudioContext
       if (!AudioContextClass) throw new Error('Browser ini belum mendukung pemrosesan audio.')
       audioContext = new AudioContextClass()
-      const buffer = await audioContext.decodeAudioData(await file.arrayBuffer())
+      let buffer = await audioContext.decodeAudioData(await file.arrayBuffer())
       const channels = Math.min(buffer.numberOfChannels, 2)
       if (!buffer.length || !channels) throw new Error('Audio tidak ditemukan di dalam video ini.')
+      const supportedRates = [44100, 48000, 32000, 24000, 22050, 16000, 12000, 11025, 8000]
+      if (!supportedRates.includes(buffer.sampleRate)) {
+        const OfflineContext = window.OfflineAudioContext || window.webkitOfflineAudioContext
+        if (!OfflineContext) throw new Error('Sample rate audio tidak didukung browser ini.')
+        const targetRate = 44100
+        const offline = new OfflineContext(channels, Math.ceil(buffer.duration * targetRate), targetRate)
+        const source = offline.createBufferSource()
+        source.buffer = buffer
+        source.connect(offline.destination)
+        source.start()
+        buffer = await offline.startRendering()
+      }
       const sampleRate = buffer.sampleRate
       const encoder = new lamejs.Mp3Encoder(channels, sampleRate, Number(bitrate))
       const left = buffer.getChannelData(0)
