@@ -21,10 +21,3 @@ Upload media melalui GitHub ke folder `public/media/`.
 ```
 
 Untuk lagu Oasis yang dikonfigurasi saat ini, pastikan file `oasis.mp3` benar-benar diunggah ke folder `public/media/` (sejajar dengan `playlist.json`). Path yang dipakai adalah `/media/oasis.mp3`. Setelah commit dan deploy selesai, pemutar musik membaca `playlist.json` otomatis. Penambahan lagu berikutnya cukup dengan mengunggah file audio dan memperbarui daftar di `playlist.json`; source code React tidak perlu diedit. Nama file dan path harus sama persis, termasuk huruf besar/kecil.
-
-## Background utama website
-- Upload gambar background pilihanmu dengan nama `background.jpg` ke folder ini.
-- Path yang digunakan website adalah `/media/background.jpg`.
-- Gambar ini menjadi latar seluruh halaman di belakang panel, kartu, dan area konten (bukan menggantikan video hero).
-- Untuk mengganti gambar, cukup timpa file `background.jpg` dengan gambar baru lalu commit/deploy ulang.
-- Disarankan memakai gambar landscape beresolusi tinggi; overlay gelap sudah diterapkan melalui CSS agar teks dan kartu tetap terbaca.
