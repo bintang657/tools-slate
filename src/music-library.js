@@ -4,6 +4,12 @@ const audioFiles = import.meta.glob('./music/albums/**/*.{mp3,m4a,ogg,wav,aac}',
   import: 'default',
 })
 
+const imageFiles = import.meta.glob('./music/albums/**/*.{png,jpg,jpeg,webp,avif}', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+})
+
 function displayName(filename) {
   return filename
     .replace(/\.[^.]+$/, '')
@@ -31,7 +37,15 @@ export const musicAlbums = Object.values(
     albums[album].tracks.push(track)
     return albums
   }, {})
-).map(album => ({
-  ...album,
-  tracks: album.tracks.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })),
-})).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
+).map(album => {
+  const cover = Object.entries(imageFiles).find(([path]) => {
+    const segments = path.split('/')
+    const albumsIndex = segments.indexOf('albums')
+    return segments[albumsIndex + 1] === album.name && /^cover\.(png|jpe?g|webp|avif)$/i.test(segments.at(-1))
+  })?.[1]
+  return {
+    ...album,
+    cover,
+    tracks: album.tracks.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: 'base' })),
+  }
+}).sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }))
