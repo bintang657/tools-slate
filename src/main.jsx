@@ -60,6 +60,7 @@ function App(){
   const [selectedAlbum,setSelectedAlbum]=useState(()=>musicAlbums[0]?.name||''), [volume,setVolume]=useState(0.72), [muted,setMuted]=useState(false)
   const [audioTime,setAudioTime]=useState(0), [audioDuration,setAudioDuration]=useState(0)
   const audioRef=useRef(null)
+  const visualizerRef=useRef(null), audioContextRef=useRef(null), mediaSourceRef=useRef(null), analyserRef=useRef(null)
   const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
   const [onlyFav,setOnlyFav]=useState(false)
   const searchRef=useRef(null)
@@ -82,10 +83,61 @@ function App(){
   },[currentTrack,playing])
   const audioAvailable=!!currentTrack
   const canControlVolume=audioAvailable
+  const startPlayback=async()=>{
+    const audio=audioRef.current;if(!audio||!audioAvailable)return
+    try{
+      if(!audioContextRef.current){
+        const AudioContextClass=window.AudioContext||window.webkitAudioContext
+        if(AudioContextClass){
+          try{
+            const context=new AudioContextClass()
+            audioContextRef.current=context
+            try{
+              mediaSourceRef.current=context.createMediaElementSource(audio)
+              const analyser=context.createAnalyser()
+              analyser.fftSize=64
+              analyser.smoothingTimeConstant=.84
+              mediaSourceRef.current.connect(analyser)
+              analyser.connect(context.destination)
+              analyserRef.current=analyser
+            }catch{
+              try{mediaSourceRef.current?.connect(context.destination)}catch{}
+            }
+          }catch{}
+        }
+      }
+      if(audioContextRef.current?.state==='suspended')await audioContextRef.current.resume()
+      await audio.play()
+    }catch{try{await audio.play()}catch{setPlaying(false)}}
+  }
   const togglePlayback=async()=>{
     const audio=audioRef.current;if(!audio||!audioAvailable)return
-    if(audio.paused){try{await audio.play()}catch{setPlaying(false)}}else{audio.pause();setPlaying(false)}
+    if(audio.paused)await startPlayback();else{audio.pause();setPlaying(false)}
   }
+  useEffect(()=>{
+    const analyser=analyserRef.current
+    const container=visualizerRef.current
+    if(!playing||!musicPanelOpen||!analyser||!container)return undefined
+    const bars=[...container.children]
+    const samples=new Uint8Array(analyser.frequencyBinCount)
+    const smooth=bars.map(()=>0)
+    let frame=0
+    const draw=()=>{
+      analyser.getByteFrequencyData(samples)
+      bars.forEach((bar,index)=>{
+        const start=Math.floor(index*samples.length/bars.length)
+        const end=Math.max(start+1,Math.floor((index+1)*samples.length/bars.length))
+        let energy=0
+        for(let bin=start;bin<end;bin++)energy+=samples[bin]
+        const level=energy/Math.max(1,end-start)/255
+        smooth[index]=smooth[index]*.74+level*.26
+        bar.style.setProperty('--level',(0.08+smooth[index]*1.32).toFixed(3))
+      })
+      frame=requestAnimationFrame(draw)
+    }
+    frame=requestAnimationFrame(draw)
+    return()=>cancelAnimationFrame(frame)
+  },[playing,musicPanelOpen])
   const nextTrack=()=>{if(!albumTracks.length)return;setTrackIndex(index=>(index+1)%albumTracks.length)}
   const previousTrack=()=>{if(!albumTracks.length)return;setTrackIndex(index=>(index-1+albumTracks.length)%albumTracks.length)}
   const selectAlbum=event=>{setSelectedAlbum(event.target.value);setTrackIndex(0)}
@@ -98,7 +150,7 @@ function App(){
       media.playbackState=audioAvailable?(playing?'playing':'paused'):'none'
     }catch{}
     const action=(name,handler)=>{try{media.setActionHandler(name,handler)}catch{}}
-    action('play',()=>audio?.play().then(()=>setPlaying(true)).catch(()=>{}))
+    action('play',startPlayback)
     action('pause',()=>{audio?.pause();setPlaying(false)})
     action('seekto',details=>{if(audio&&Number.isFinite(details.seekTime))audio.currentTime=details.seekTime})
     action('nexttrack',nextTrack)

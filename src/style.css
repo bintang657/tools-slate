@@ -1340,3 +1340,93 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
   .custom-select-trigger,.custom-select-chevron,.custom-select-option { transition: none !important; }
   .custom-select-popup { animation: none !important; }
 }
+
+/* Centered chooser dialogs: avoid the browser/Android native white picker. */
+.custom-select-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(2, 8, 16, .68);
+  backdrop-filter: blur(12px) saturate(120%);
+  animation: selectBackdropIn .18s ease both;
+}
+.custom-select-dialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 15px;
+  width: min(430px, calc(100vw - 36px));
+  max-height: min(72dvh, 620px);
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(139, 204, 236, .34);
+  border-radius: 24px;
+  background: radial-gradient(ellipse at 100% 0%, rgba(64, 158, 206, .16), transparent 45%), linear-gradient(145deg, #11263b, #091522 72%);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, .68), inset 0 1px rgba(255, 255, 255, .1), 0 0 45px rgba(56, 172, 225, .12);
+  animation: selectDialogIn .25s cubic-bezier(.18,.82,.24,1) both;
+}
+.custom-select-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; padding: 2px 2px 13px; border-bottom: 1px solid rgba(164, 207, 231, .13); }
+.custom-select-dialog-head > div { min-width: 0; }
+.custom-select-eyebrow { color: #65c8ea; font: 700 8px/1.4 'DM Mono', monospace; letter-spacing: .15em; }
+.custom-select-dialog-head h2 { margin: 6px 0 3px; color: #edf8ff; font: 700 17px/1.25 'Manrope', sans-serif; }
+.custom-select-dialog-head p { margin: 0; color: #91a8bc; font-size: 10px; }
+.custom-select-close { display: grid; place-items: center; flex: 0 0 36px; width: 36px; height: 36px; border: 1px solid rgba(166, 207, 232, .2); border-radius: 12px; background: #ffffff08; color: #bfd8e9; transition: background .16s, transform .16s, color .16s; }
+.custom-select-close:hover { transform: rotate(90deg); background: #ffffff14; color: #fff; }
+.custom-select-popup {
+  position: relative;
+  top: auto;
+  left: auto;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  width: 100%;
+  max-height: none;
+  min-height: 0;
+  overflow: auto;
+  padding: 1px 4px 2px 1px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  animation: none;
+  scrollbar-color: #436681 transparent;
+}
+.custom-select-option { min-height: 48px; padding: 11px 13px; border: 1px solid rgba(153, 193, 219, .13); border-radius: 14px; background: linear-gradient(110deg, rgba(255,255,255,.035), rgba(255,255,255,.012)); color: #c5d9e8; }
+.custom-select-option > span { font-size: 12px; }
+.custom-select-option svg { color: #6bdcf3; }
+.custom-select-option:hover,.custom-select-option.highlighted,.custom-select-option:focus-visible { outline: none; border-color: rgba(103, 216, 245, .5); background: linear-gradient(100deg, rgba(50, 163, 211, .2), rgba(129, 126, 255, .12)); color: #f2fbff; }
+.custom-select-option.selected { border-color: rgba(103, 216, 245, .32); background: linear-gradient(100deg, rgba(50, 163, 211, .15), rgba(129, 126, 255, .09)); }
+@keyframes selectBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes selectDialogIn { from { opacity: 0; transform: translateY(12px) scale(.96); filter: blur(5px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+@media(max-width:480px) {
+  .custom-select-backdrop { padding: 18px; }
+  .custom-select-dialog { width: min(390px, calc(100vw - 36px)); max-height: min(68dvh, 560px); padding: 16px; border-radius: 22px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .custom-select-backdrop,.custom-select-dialog { animation: none !important; }
+}
+
+/* Audio-reactive bars use smoothed Web Audio frequency data. */
+.music-track-info .music-visualizer { align-items: center; height: 19px; gap: 3px; }
+.music-visualizer i,.music-track-info .music-visualizer i {
+  height: 100% !important;
+  min-height: 2px;
+  transform: scaleY(var(--level, .12));
+  transform-origin: center;
+  transition: transform .075s linear, opacity .12s ease;
+  animation: none !important;
+}
+.music-visualizer.active i { opacity: .96; }
+@media(prefers-reduced-motion:reduce) {
+  .music-visualizer i { transition: none !important; }
+}
+
+/* Consistent contemporary entrance motion across tool cards and selection dialogs. */
+.nexus-theme .tool-card { animation: slateCardEnter .42s cubic-bezier(.2,.75,.25,1) both; animation-delay: calc(min(var(--card-index, 0), 12) * 22ms); }
+@keyframes slateCardEnter { from { opacity: 0; transform: translateY(12px) scale(.985); filter: blur(3px); } to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); } }
+@media(prefers-reduced-motion:reduce) {
+  .nexus-theme .tool-card { animation: none !important; }
+}
