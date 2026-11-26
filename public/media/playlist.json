@@ -2,8 +2,8 @@
   "tracks": [
     {
       "title": "Oasis",
-      "artist": "Music Player",
-      "src": "publik/media/oasis.mp3"
+      "artist": "Oasis",
+      "src": "/media/oasis.mp3"
     }
   ]
 }
