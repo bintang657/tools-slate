@@ -7,7 +7,7 @@ import {
   Sun, Star, Globe2, Network, KeyRound, Fingerprint, ScanSearch, LockKeyhole,
   Shield, HeartPulse, Activity, CheckCircle2, AlertTriangle, AudioLines, Volume2, Play,
   SkipBack, SkipForward, UserRound, Info, CircleHelp, MessageCircle, ShoppingCart, Compass, Pause,
-  DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone, Image, Battery, BatteryCharging
+  DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone, Image, Battery, BatteryCharging, Unlink
 } from 'lucide-react'
 import { PhotoHdModal, Mp4ToMp3Modal } from './media-tools.jsx'
 import { musicAlbums } from './music-library.js'
@@ -42,6 +42,7 @@ const tools = [
   { id:'urlscan', name:'URL Security Analyzer', desc:'Analisis skema, hostname, port, dan indikator URL.', category:'Security Lab', icon:ScanSearch },
   { id:'ssl', name:'Certificate Transparency', desc:'Cari catatan sertifikat TLS publik untuk domain.', category:'Security Lab', icon:LockKeyhole, tag:'API' },
   { id:'socialdownloader', name:'Social Media Downloader', desc:'Unduh video publik TikTok dan Instagram.', category:'Downloader', icon:DownloadCloud, tag:'API' },
+  { id:'safelinku', name:'Safelinku Bypass', desc:'Ambil link tujuan asli dari Safelinku, sfl.gl, dan shortlink sejenis.', category:'Downloader', icon:Unlink, tag:'New' },
   { id:'lyricssearch', name:'Lyrics Finder', desc:'Cari lirik lagu berdasarkan judul dan nama artis.', category:'Online Tools', icon:Music2, tag:'API' },
 ]
 const categories = ['All','Downloader','Maker','Tools']
@@ -281,7 +282,7 @@ function App(){
         {filtered.length?<div className="tool-grid">{filtered.map((t,index)=><ToolCard key={t.id} index={index} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
     </main>
-    {selected&&((selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>:selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='photohd'?<PhotoHdModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='mp4mp3'?<Mp4ToMp3Modal key={selected.id} onClose={()=>setSelected(null)}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
+    {selected&&((selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>:selected.id==='safelinku'?<SafelinkuBypassModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='photohd'?<PhotoHdModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='mp4mp3'?<Mp4ToMp3Modal key={selected.id} onClose={()=>setSelected(null)}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
   </div>
 }
 function InfoPage({page,onClose}){
@@ -406,6 +407,48 @@ function SocialDownloaderModal({onClose}){
    {error&&<div className="notice">{error}</div>}
    {data&&<div className="social-result"><div className="social-result-heading"><b>{data.title||'Media ditemukan'}</b><span>{data.source||'Social media'}</span></div>{data.thumbnail&&<img className="social-thumbnail" src={data.thumbnail} alt="Thumbnail media" onError={e=>e.currentTarget.style.display='none'}/>}<div className="social-download-list">{data.media.map((item,i)=><button type="button" key={`${item.url}-${i}`} onClick={()=>downloadMedia(item)} disabled={!!downloading} className="social-download-link"><span><b>{item.label||item.quality||`File ${i+1}`}</b><small>{item.type||'Media'}{item.quality?` · ${item.quality}`:''}</small></span><span>{downloading===item.url?'Mengunduh...':<>Unduh <Download size={15}/></>}</span></button>)}</div></div>}
   </div></section></div>
+}
+
+function SafelinkuBypassModal({onClose}){
+ const [url,setUrl]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[data,setData]=useState(null),[copied,setCopied]=useState(false)
+ const submit=async()=>{
+  setError('');setData(null);setCopied(false)
+  const raw=url.trim()
+  if(!raw){setError('Masukkan URL Safelinku / shortlink.');return}
+  let parsed
+  try{parsed=new URL(raw.includes('://')?raw:`https://${raw}`)}catch{setError('Format URL tidak valid.');return}
+  if(!['http:','https:'].includes(parsed.protocol)){setError('Hanya URL http/https yang didukung.');return}
+  setBusy(true)
+  try{
+   const response=await fetch('/api/safelinku',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:parsed.href}),signal:AbortSignal.timeout(90000)})
+   const body=await response.json().catch(()=>({}))
+   if(!response.ok)throw new Error(body.error||`API error (${response.status}).`)
+   if(!body.destination)throw new Error('Tidak berhasil mengekstrak link tujuan.')
+   setData(body)
+  }catch(e){setError(e.name==='TimeoutError'?'Waktu habis. Coba lagi atau pastikan link masih aktif.':(e.message||'Bypass gagal.'))}
+  finally{setBusy(false)}
+ }
+ const copy=async()=>{
+  if(!data?.destination)return
+  try{await navigator.clipboard.writeText(data.destination);setCopied(true);setTimeout(()=>setCopied(false),1800)}catch{setError('Clipboard tidak tersedia di browser ini.')}
+ }
+ return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal social-downloader-modal" role="dialog" aria-modal="true" aria-labelledby="safelinku-title">
+  <div className="modal-head"><div className="modal-title"><span className="tool-icon"><Unlink size={20}/></span><div><h2 id="safelinku-title">Safelinku Bypass</h2><p>Safelinku · sfl.gl · shortlink sejenis</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Close"><X/></button></div>
+  <div className="modal-body">
+   <label className="downloader-label" htmlFor="safelinku-url">Link Safelinku / shortlink</label>
+   <input id="safelinku-url" className="single-input" value={url} onChange={e=>setUrl(e.target.value)} onKeyDown={e=>e.key==='Enter'&&!busy&&submit()} placeholder="https://sfl.gl/... atau https://safelinku.com/..." autoComplete="url"/>
+   <button className="run-btn" onClick={submit} disabled={busy||!url.trim()}>{busy?<RefreshCw className="spin" size={17}/>:<Unlink size={17}/>} {busy?'Membypass...':'Bypass link'}</button>
+   {error&&<div className="notice">{error}</div>}
+   {data&&<div className="social-result">
+    <div className="social-result-heading"><b>Link tujuan ditemukan</b><span>{data.hops?.length||1} hop</span></div>
+    <div className="social-download-list">
+     <a className="social-download-link" href={data.destination} target="_blank" rel="noreferrer noopener"><span><b>Buka link tujuan</b><small style={{wordBreak:'break-all'}}>{data.destination}</small></span><span><ExternalLink size={15}/></span></a>
+     <button type="button" className="social-download-link" onClick={copy}><span><b>{copied?'Tersalin':'Salin link tujuan'}</b><small>Clipboard</small></span><span><Copy size={15}/></span></button>
+    </div>
+    {Array.isArray(data.hops)&&data.hops.length>1&&<div style={{marginTop:12,fontSize:12,opacity:.75,wordBreak:'break-all'}}><b>Rantai:</b> {data.hops.join(' → ')}</div>}
+   </div>}
+  </div>
+ </section></div>
 }
 
 function LyricsSearchModal({onClose}){
