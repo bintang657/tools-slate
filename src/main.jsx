@@ -393,7 +393,12 @@ function SocialDownloaderModal({onClose}){
   try{
    const response=await fetch('/api/social-download',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:parsed.href,platform:match[1]})})
    const body=await response.json().catch(()=>({}))
-   if(!response.ok)throw new Error(body.error||`API error (${response.status}).`)
+   if(!response.ok){
+     const code=body.code||`HTTP_${response.status}`
+     const message=body.error||`API error (${response.status}).`
+     const err=new Error(message);err.code=code
+     throw err
+   }
    if(!Array.isArray(body.media)||!body.media.length)throw new Error('API tidak mengembalikan file yang bisa diunduh.')
    setData(body)
   }catch(e){setError(e.message||'Gagal mengambil media. Coba lagi.')}
@@ -409,46 +414,210 @@ function SocialDownloaderModal({onClose}){
   </div></section></div>
 }
 
-function SafelinkuBypassModal({onClose}){
- const [url,setUrl]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[data,setData]=useState(null),[copied,setCopied]=useState(false)
- const submit=async()=>{
-  setError('');setData(null);setCopied(false)
-  const raw=url.trim()
-  if(!raw){setError('Masukkan URL Safelinku / shortlink.');return}
-  let parsed
-  try{parsed=new URL(raw.includes('://')?raw:`https://${raw}`)}catch{setError('Format URL tidak valid.');return}
-  if(!['http:','https:'].includes(parsed.protocol)){setError('Hanya URL http/https yang didukung.');return}
-  setBusy(true)
-  try{
-   const response=await fetch('/api/safelinku',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:parsed.href}),signal:AbortSignal.timeout(90000)})
-   const body=await response.json().catch(()=>({}))
-   if(!response.ok)throw new Error(body.error||`API error (${response.status}).`)
-   if(!body.destination)throw new Error('Tidak berhasil mengekstrak link tujuan.')
-   setData(body)
-  }catch(e){setError(e.name==='TimeoutError'?'Waktu habis. Coba lagi atau pastikan link masih aktif.':(e.message||'Bypass gagal.'))}
-  finally{setBusy(false)}
- }
- const copy=async()=>{
-  if(!data?.destination)return
-  try{await navigator.clipboard.writeText(data.destination);setCopied(true);setTimeout(()=>setCopied(false),1800)}catch{setError('Clipboard tidak tersedia di browser ini.')}
- }
- return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal social-downloader-modal" role="dialog" aria-modal="true" aria-labelledby="safelinku-title">
-  <div className="modal-head"><div className="modal-title"><span className="tool-icon"><Unlink size={20}/></span><div><h2 id="safelinku-title">Safelinku Bypass</h2><p>Safelinku · sfl.gl · shortlink sejenis</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Close"><X/></button></div>
-  <div className="modal-body">
-   <label className="downloader-label" htmlFor="safelinku-url">Link Safelinku / shortlink</label>
-   <input id="safelinku-url" className="single-input" value={url} onChange={e=>setUrl(e.target.value)} onKeyDown={e=>e.key==='Enter'&&!busy&&submit()} placeholder="https://sfl.gl/... atau https://safelinku.com/..." autoComplete="url"/>
-   <button className="run-btn" onClick={submit} disabled={busy||!url.trim()}>{busy?<RefreshCw className="spin" size={17}/>:<Unlink size={17}/>} {busy?'Membypass...':'Bypass link'}</button>
-   {error&&<div className="notice">{error}</div>}
-   {data&&<div className="social-result">
-    <div className="social-result-heading"><b>Link tujuan ditemukan</b><span>{data.hops?.length||1} hop</span></div>
-    <div className="social-download-list">
-     <a className="social-download-link" href={data.destination} target="_blank" rel="noreferrer noopener"><span><b>Buka link tujuan</b><small style={{wordBreak:'break-all'}}>{data.destination}</small></span><span><ExternalLink size={15}/></span></a>
-     <button type="button" className="social-download-link" onClick={copy}><span><b>{copied?'Tersalin':'Salin link tujuan'}</b><small>Clipboard</small></span><span><Copy size={15}/></span></button>
+function SafelinkuBypassModal({ onClose }) {
+  const [url, setUrl] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const [data, setData] = useState(null)
+  const [copied, setCopied] = useState(false)
+
+  const MESSAGE_BY_CODE = {
+    INVALID_URL: 'URL tidak valid atau host diblokir.',
+    BLOCKED_HOST: 'Server memblokir host internal / private.',
+    TIMEOUT: 'Waktu habis. Link mungkin lambat atau mati.',
+    TOO_MANY_HOPS: 'Terlalu banyak hop, link kemungkinan loop.',
+    TOO_MANY_REDIRECTS: 'Redirect terlalu banyak, link kemungkinan loop.',
+    BYPASS_ERROR: 'Bypass gagal. Coba lagi atau buka link di browser.',
+    BODY: 'Request tidak valid.',
+    METHOD: 'Metode request salah.',
+  }
+
+  const safeDestination = (() => {
+    if (!data?.destination) return null
+    try {
+      const u = new URL(data.destination)
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return null
+      return u.href
+    } catch {
+      return null
+    }
+  })()
+
+  const submit = async () => {
+    setError('')
+    setData(null)
+    setCopied(false)
+    const raw = url.trim()
+    if (!raw) {
+      setError('Masukkan URL Safelinku / shortlink.')
+      return
+    }
+    let parsed
+    try {
+      parsed = new URL(raw.includes('://') ? raw : `https://${raw}`)
+    } catch {
+      setError('Format URL tidak valid.')
+      return
+    }
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      setError('Hanya URL http/https yang didukung.')
+      return
+    }
+    setBusy(true)
+    try {
+      const response = await fetch('/api/safelinku', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: parsed.href }),
+        signal: AbortSignal.timeout(90000),
+      })
+      const body = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        const code = body.code || `HTTP_${response.status}`
+        const message =
+          MESSAGE_BY_CODE[code] || body.error || `API error (${response.status}).`
+        const err = new Error(message)
+        err.code = code
+        err.hops = body.hops
+        throw err
+      }
+      if (!body.destination) throw new Error('Tidak berhasil mengekstrak link tujuan.')
+      try {
+        const check = new URL(body.destination)
+        if (check.protocol !== 'http:' && check.protocol !== 'https:') {
+          throw new Error('Destination tidak aman.')
+        }
+      } catch {
+        throw new Error('Server mengembalikan destination tidak valid.')
+      }
+      setData(body)
+    } catch (e) {
+      setError(
+        e.name === 'TimeoutError'
+          ? 'Waktu habis. Coba lagi atau pastikan link masih aktif.'
+          : e.message || 'Bypass gagal.'
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const copy = async () => {
+    if (!safeDestination) return
+    try {
+      await navigator.clipboard.writeText(safeDestination)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setError('Clipboard tidak tersedia di browser ini.')
+    }
+  }
+
+  return (
+    <div
+      className="modal-backdrop"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <section
+        className="tool-modal social-downloader-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="safelinku-title"
+      >
+        <div className="modal-head">
+          <div className="modal-title">
+            <span className="tool-icon">
+              <Unlink size={20} />
+            </span>
+            <div>
+              <h2 id="safelinku-title">Safelinku Bypass</h2>
+              <p>Safelinku · sfl.gl · shortlink sejenis</p>
+            </div>
+          </div>
+          <button className="icon-btn" onClick={onClose} aria-label="Close">
+            <X />
+          </button>
+        </div>
+        <div className="modal-body">
+          <label className="downloader-label" htmlFor="safelinku-url">
+            Link Safelinku / shortlink
+          </label>
+          <input
+            id="safelinku-url"
+            className="single-input"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && !busy && submit()}
+            placeholder="https://sfl.gl/... atau https://safelinku.com/..."
+            autoComplete="url"
+          />
+          <button
+            className="run-btn"
+            onClick={submit}
+            disabled={busy || !url.trim()}
+          >
+            {busy ? <RefreshCw className="spin" size={17} /> : <Unlink size={17} />}
+            {busy ? 'Membypass...' : 'Bypass link'}
+          </button>
+          {error && <div className="notice">{error}</div>}
+          {data && safeDestination && (
+            <div className="social-result">
+              <div className="social-result-heading">
+                <b>Link tujuan ditemukan</b>
+                <span>{data.hops?.length || 1} hop</span>
+              </div>
+              <div className="social-download-list">
+                <a
+                  className="social-download-link"
+                  href={safeDestination}
+                  target="_blank"
+                  rel="noreferrer noopener nofollow"
+                >
+                  <span>
+                    <b>Buka link tujuan</b>
+                    <small style={{ wordBreak: 'break-all' }}>{safeDestination}</small>
+                  </span>
+                  <span>
+                    <ExternalLink size={15} />
+                  </span>
+                </a>
+                <button
+                  type="button"
+                  className="social-download-link"
+                  onClick={copy}
+                >
+                  <span>
+                    <b>{copied ? 'Tersalin' : 'Salin link tujuan'}</b>
+                    <small>Clipboard</small>
+                  </span>
+                  <span>
+                    <Copy size={15} />
+                  </span>
+                </button>
+              </div>
+              {Array.isArray(data.hops) && data.hops.length > 1 && (
+                <div
+                  style={{
+                    marginTop: 12,
+                    fontSize: 12,
+                    opacity: 0.75,
+                    wordBreak: 'break-all',
+                  }}
+                >
+                  <b>Rantai:</b> {data.hops.join(' → ')}
+                </div>
+              )}
+            </div>
+          )}
+          {data && !safeDestination && (
+            <div className="notice">
+              Server mengembalikan destination tidak aman (protokol bukan http/https).
+            </div>
+          )}
+        </div>
+      </section>
     </div>
-    {Array.isArray(data.hops)&&data.hops.length>1&&<div style={{marginTop:12,fontSize:12,opacity:.75,wordBreak:'break-all'}}><b>Rantai:</b> {data.hops.join(' → ')}</div>}
-   </div>}
-  </div>
- </section></div>
+  )
 }
 
 function LyricsSearchModal({onClose}){
@@ -501,6 +670,52 @@ function normalizeHost(s){let h=s.trim().replace(/^https?:\/\//i,'').split(/[/?#
 function dnsStatus(n){return ({0:'NOERROR',1:'FORMERR',2:'SERVFAIL',3:'NXDOMAIN',4:'NOTIMP',5:'REFUSED'})[n]||`Code ${n}`}
 function rgbToHsl(r,g,b){r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b);let h,s,l=(max+min)/2;if(max===min)h=s=0;else{const d=max-min;s=l>.5?d/(2-max-min):d/(max+min);switch(max){case r:h=(g-b)/d+(g<b?6:0);break;case g:h=(b-r)/d+2;break;default:h=(r-g)/d+4}h*=60}return[h,s*100,l*100]}
 function weatherLabel(c){if(c===0)return 'Cerah';if(c<=3)return 'Berawan';if(c<=48)return 'Berkabut';if(c<=67)return 'Hujan';if(c<=77)return 'Salju';if(c<=82)return 'Hujan';if(c<=86)return 'Hujan salju';return 'Badai petir'}
-function markdownLite(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/^### (.*)$/gm,'<h3>$1</h3>').replace(/^## (.*)$/gm,'<h2>$1</h2>').replace(/^# (.*)$/gm,'<h1>$1</h1>').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>').replace(/`(.*?)`/g,'<code>$1</code>').replace(/^&gt; (.*)$/gm,'<blockquote>$1</blockquote>').replace(/\n/g,'<br/>')}
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function safeHref(raw) {
+  if (!raw) return null
+  let u
+  try {
+    u = new URL(raw, 'https://tools-slate.invalid/')
+  } catch {
+    return null
+  }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:' && u.protocol !== 'mailto:') return null
+  return raw
+}
+
+function markdownLite(s) {
+  let src = escapeHtml(s)
+
+  const codes = []
+  src = src.replace(/`([^`\n]+)`/g, (_, code) => {
+    codes.push(`<code>${code}</code>`)
+    return `\u0000CODE${codes.length - 1}\u0000`
+  })
+
+  src = src.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, text, url) => {
+    const href = safeHref(url.replace(/&amp;/g, '&'))
+    if (!href) return text
+    return `<a href="${escapeHtml(href)}" rel="noopener noreferrer nofollow" target="_blank">${text}</a>`
+  })
+
+  src = src
+    .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.*)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*([^*\n]+)\*/g, '<em>$1</em>')
+    .replace(/^&gt; (.*)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/\n/g, '<br/>')
+
+  return src.replace(/\u0000CODE(\d+)\u0000/g, (_, i) => codes[Number(i)])
+}
 
 createRoot(document.getElementById('root')).render(<App/>)
