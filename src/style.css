@@ -1433,3 +1433,15 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 @media(prefers-reduced-motion:reduce) {
   .nexus-theme .tool-card { animation: none !important; }
 }
+
+/* Slate menu: centered copy and a cohesive ice-blue palette. */
+.info-panel .panel-heading {
+  justify-content: center;
+  padding: 5px 4px 20px;
+  border-bottom-color: rgba(169, 230, 255, .17);
+}
+.info-panel .panel-heading > div { justify-items: center; gap: 8px; text-align: center; }
+.info-panel .panel-heading b { color: #eaf7ff; font-size: 19px; letter-spacing: .1em; }
+.info-panel .panel-heading span { color: #a8c4d8; font-size: 14px; line-height: 1.5; }
+.info-panel .info-card > svg { color: #a9e6ff; }
+.info-panel .info-card.whatsapp .info-icon { color: #bdeaff; border-color: #8bc8e52b; background: linear-gradient(145deg, #1a3b55, #10253a); }
