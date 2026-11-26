@@ -7,7 +7,7 @@ import {
   Sun, Star, Globe2, Network, KeyRound, Fingerprint, ScanSearch, LockKeyhole,
   Shield, HeartPulse, Activity, CheckCircle2, AlertTriangle, AudioLines, Volume2, Play,
   SkipBack, SkipForward, UserRound, Info, CircleHelp, MessageCircle, ShoppingCart, Compass, Pause,
-  DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone, Image, Wifi, WifiOff
+  DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone, Image, Battery, BatteryCharging
 } from 'lucide-react'
 import { PhotoHdModal, Mp4ToMp3Modal } from './media-tools.jsx'
 import { musicAlbums } from './music-library.js'
@@ -84,7 +84,7 @@ function detectVisitorDetails(){
     :/Safari\//i.test(agent)?'Safari':'Browser'
   const isTablet=/iPad|Tablet|PlayBook|Silk/i.test(agent)||(nav.platform==='MacIntel'&&nav.maxTouchPoints>1)
   const isMobile=typeof nav.userAgentData?.mobile==='boolean'?nav.userAgentData.mobile:/Android|iPhone|iPod|Mobile/i.test(agent)
-  return {country,browser,device:isTablet?'Tablet':isMobile?'Mobile':'Desktop',online:nav.onLine!==false}
+  return {country,browser,device:isTablet?'Tablet':isMobile?'Mobile':'Desktop'}
 }
 
 function App(){
@@ -96,20 +96,31 @@ function App(){
   const visualizerRef=useRef(null), audioContextRef=useRef(null), mediaSourceRef=useRef(null), analyserRef=useRef(null)
   const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
   const [onlyFav,setOnlyFav]=useState(false)
-  const [visitorDetails,setVisitorDetails]=useState(detectVisitorDetails)
+  const [visitorDetails]=useState(detectVisitorDetails)
+  const [batteryInfo,setBatteryInfo]=useState({level:null,charging:false,supported:null})
   useEffect(()=>{
-    const refreshVisitor=()=>setVisitorDetails(detectVisitorDetails())
-    window.addEventListener('online',refreshVisitor)
-    window.addEventListener('offline',refreshVisitor)
-    window.addEventListener('focus',refreshVisitor)
-    document.addEventListener('visibilitychange',refreshVisitor)
-    const timer=window.setInterval(refreshVisitor,30000)
+    let disposed=false
+    let batteryManager
+    let updateBattery
+    const unavailable=()=>{if(!disposed)setBatteryInfo({level:null,charging:false,supported:false})}
+    if(typeof navigator==='undefined'||typeof navigator.getBattery!=='function'){
+      unavailable()
+      return()=>{disposed=true}
+    }
+    navigator.getBattery().then(manager=>{
+      if(disposed)return
+      batteryManager=manager
+      updateBattery=()=>setBatteryInfo({level:Math.round(manager.level*100),charging:manager.charging,supported:true})
+      updateBattery()
+      manager.addEventListener('levelchange',updateBattery)
+      manager.addEventListener('chargingchange',updateBattery)
+    }).catch(unavailable)
     return()=>{
-      window.removeEventListener('online',refreshVisitor)
-      window.removeEventListener('offline',refreshVisitor)
-      window.removeEventListener('focus',refreshVisitor)
-      document.removeEventListener('visibilitychange',refreshVisitor)
-      window.clearInterval(timer)
+      disposed=true
+      if(updateBattery){
+        batteryManager?.removeEventListener('levelchange',updateBattery)
+        batteryManager?.removeEventListener('chargingchange',updateBattery)
+      }
     }
   },[])
   const searchRef=useRef(null)
@@ -263,7 +274,7 @@ function App(){
     {infoPage&&<InfoPage page={infoPage} onClose={()=>setInfoPage(null)}/> }
     <main id="top" className="nexus-main">
       <section className="nexus-hero"><div className="hero-art">{heroVideo&&<video className="hero-video" autoPlay muted loop playsInline onError={e=>{e.currentTarget.style.display="none"}}><source src={heroVideo} type="video/mp4"/></video>}<div className="hero-art-glow"/><div className="hero-art-copy"><span>TOOLS SLATE</span><small>YOUR DIGITAL SPACE</small></div></div></section>
-      <section className="visitor-panel"><div className="visitor-avatar"><UserRound/></div><div className="visitor-data"><div><Globe2/> <span>NEGARA</span> <b title="Perkiraan otomatis dari zona waktu dan bahasa perangkat">{visitorDetails.country}</b><Smartphone/> <span>DEVICE</span> <b>{visitorDetails.device}</b></div><div><Globe2/> <span>BROWSER</span> <b>{visitorDetails.browser}</b><span className="visitor-status-label">STATUS</span><span className={`visitor-status ${visitorDetails.online?'is-online':'is-offline'}`} role="status" aria-live="polite">{visitorDetails.online?<Wifi/>:<WifiOff/>}<b>{visitorDetails.online?'ONLINE':'OFFLINE'}</b><small>LIVE</small></span></div><div className="visitor-tags"><span className="visitor-chip"><Activity/> Tools aktif</span><span className="visitor-chip role-chip">Member</span></div></div></section>
+      <section className="visitor-panel"><div className="visitor-avatar"><UserRound/></div><div className="visitor-data"><div><Globe2/> <span>NEGARA</span> <b title="Perkiraan otomatis dari zona waktu dan bahasa perangkat">{visitorDetails.country}</b><Smartphone/> <span>DEVICE</span> <b>{visitorDetails.device}</b></div><div><Globe2/> <span>BROWSER</span> <b>{visitorDetails.browser}</b><span className="visitor-metric-label">BATERAI</span><span className={`visitor-battery ${batteryInfo.charging?'is-charging':''} ${batteryInfo.supported===false?'unavailable':''}`} role="status" aria-live="polite" title={batteryInfo.supported===false?'Informasi baterai tidak didukung browser ini':'Status baterai perangkat diperbarui otomatis'}>{batteryInfo.charging?<BatteryCharging/>:<Battery/>}<b>{batteryInfo.supported===false?'N/A':batteryInfo.level===null?'--':`${batteryInfo.level}%`}</b><small>{batteryInfo.supported===false?'N/A':batteryInfo.charging?'CHARGING':'LIVE'}</small></span></div><div className="visitor-tags"><span className="visitor-chip"><Activity/> Tools aktif</span><span className="visitor-chip role-chip">Member</span></div></div></section>
       <section className="tools-section nexus-tools" id="tools"><div className="nexus-toolbar"><div className="category-row">{tabs.map(([name,Icon])=><button key={name} className={`category-pill ${active===name?'active':''}`} onClick={()=>{setActive(name);setOnlyFav(false)}}><Icon size={17}/>{name}</button>)}</div></div>
         <div className="section-heading nexus-section-heading"><div><h2><Grid2X2/> {active==='All'?'Semua Tools':active}</h2><p>Temukan tools yang kamu butuhkan.</p></div><span className="result-count">{filtered.length} TOOLS</span></div>
         <div className="search-wrap nexus-search"><Search size={18}/><input ref={searchRef} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari tools..." aria-label="Cari tools"/></div>
