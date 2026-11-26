@@ -981,3 +981,292 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
     border-radius: 0 !important;
   }
 }
+
+
+/* V16 — PREMIUM DIGITAL ATELIER
+   Quiet graphite surfaces, warm mineral accents, precise motion.
+   Media source, playlist wiring and all existing tool logic remain unchanged. */
+.app-shell.nexus-theme {
+  --bg:#101413;
+  --surface:#171d1b;
+  --surface2:#202825;
+  --line:#303b36;
+  --text:#f1f2ed;
+  --muted:#a0aaa2;
+  --accent:#c7ad82;
+  --accent2:#91b4a5;
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(150,174,153,.10),transparent 34%),
+    radial-gradient(ellipse at 88% 14%,rgba(190,160,115,.08),transparent 30%),
+    linear-gradient(180deg,#111715 0%,#0d1110 52%,#101413 100%);
+  color:var(--text);
+}
+.app-shell.nexus-theme.theme-light {
+  --bg:#edf0eb;--surface:#fff;--surface2:#f4f6f1;--line:#d9e0d8;
+  --text:#202923;--muted:#68766d;--accent:#92764d;--accent2:#507d6c;
+  background:linear-gradient(180deg,#f4f5f0,#e9eee8 70%,#f4f5f0);
+}
+.nexus-theme .nexus-header {
+  background:rgba(15,21,18,.88);
+  border-bottom:1px solid rgba(197,173,130,.16);
+  box-shadow:0 10px 34px rgba(0,0,0,.14);
+  backdrop-filter:blur(22px) saturate(130%);
+}
+.theme-light.nexus-theme .nexus-header {background:rgba(246,248,243,.9);border-color:#dce2d8}
+.nexus-theme .music-panel-toggle {
+  color:#e5d4b4;background:linear-gradient(145deg,#27322d,#1b2420);
+  border:1px solid rgba(199,173,130,.34);box-shadow:0 8px 24px #0002;
+}
+.nexus-theme .music-panel-toggle:hover,.nexus-theme .music-panel-toggle.active {
+  color:#fff2d9;border-color:#c7ad82;background:#303b33;box-shadow:0 8px 28px rgba(199,173,130,.15);
+  transform:translateY(-1px);
+}
+.nexus-theme .music-panel-content {animation:atelierPanelIn .34s cubic-bezier(.2,.8,.2,1) both}
+.nexus-theme .music-panel-content .info-trigger {
+  background:#26332d;border-color:#52665a;color:#d7e5d9;
+}
+.nexus-theme .music-panel-content .info-trigger:hover {background:#33443a;border-color:#91b4a5}
+.nexus-theme .music-track-info strong {color:var(--text);font-size:13px;letter-spacing:.1px}
+.nexus-theme .music-track-info>span {color:var(--muted)}
+.nexus-theme .music-visualizer i {background:linear-gradient(180deg,#d8c29a,#8cae9e)}
+.nexus-theme .audio-dock {
+  background:rgba(31,42,36,.92);border:1px solid rgba(145,180,165,.35);
+  color:#d7e5d9;box-shadow:0 8px 26px rgba(0,0,0,.16);
+}
+.nexus-theme .audio-dock button {background:#35443b;color:#e4eadf;transition:background .2s,transform .2s}
+.nexus-theme .audio-dock button:hover:not(:disabled) {background:#4a5d50;transform:translateY(-1px)}
+.nexus-theme .audio-dock .volume-range {accent-color:#c7ad82}
+.nexus-theme .menu-toggle {
+  background:rgba(31,40,35,.92);border:1px solid rgba(199,173,130,.27);color:#e9e4d8;
+  box-shadow:0 8px 24px rgba(0,0,0,.13);transition:transform .22s,border-color .22s,background .22s;
+}
+.nexus-theme .menu-toggle:hover {transform:translateY(-2px);border-color:#c7ad82;background:#303b33}
+.nexus-theme .info-panel {
+  background:rgba(22,29,25,.97);border:1px solid rgba(199,173,130,.24);
+  border-radius:22px;box-shadow:0 28px 90px rgba(0,0,0,.42);
+}
+.theme-light.nexus-theme .info-panel {background:rgba(250,251,247,.98);border-color:#d8dfd5}
+.nexus-theme .panel-heading {border-color:var(--line)}
+.nexus-theme .panel-heading b {letter-spacing:1.2px;color:var(--text)}
+.nexus-theme .panel-heading span {color:var(--muted)}
+.nexus-theme .online-pill {border-color:#3e6550;color:#9bd0ad!important;background:#1c3326}
+.nexus-theme .info-card {
+  background:linear-gradient(145deg,#1b2420,#171e1b);border:1px solid #344139;
+  border-radius:15px;transition:transform .25s cubic-bezier(.2,.8,.2,1),border-color .25s,background .25s;
+}
+.nexus-theme .info-card:hover {transform:translateY(-3px);border-color:#8b9f8d;background:#222e27}
+.nexus-theme .info-icon {background:#29372e;border-color:#45594b;color:#d5c39e;border-radius:14px;width:52px;height:52px}
+.nexus-theme .info-card b {color:#edf0e9}
+.nexus-theme .info-card small {color:#a5b0a7}
+.nexus-theme .info-card>svg {color:#c7ad82}
+.nexus-theme .info-card.whatsapp .info-icon {background:#1b3327;border-color:#3e6a50;color:#8ed0a5}
+.nexus-theme .nexus-hero {position:relative}
+.nexus-theme .nexus-hero .hero-art {
+  position:relative;aspect-ratio:16/9;height:auto;min-height:0;max-height:none;
+  overflow:hidden;border-radius:0 0 24px 24px;background-color:#202a25;
+  box-shadow:0 24px 60px rgba(0,0,0,.18);
+}
+.nexus-theme .nexus-hero .hero-video {
+  position:absolute;inset:0;width:100%;height:100%;display:block;
+  object-fit:cover;object-position:center;opacity:.94;
+  filter:saturate(.82) contrast(1.035);
+}
+.nexus-theme .nexus-hero .hero-art:after {
+  background:linear-gradient(90deg,rgba(12,18,15,.46),transparent 72%),
+    linear-gradient(0deg,rgba(12,18,15,.68),transparent 55%);
+}
+.nexus-theme .hero-art-glow {background:rgba(199,173,130,.12);filter:blur(76px)}
+.nexus-theme .hero-art-copy {left:clamp(22px,4vw,54px);bottom:clamp(20px,3vw,38px);gap:9px}
+.nexus-theme .hero-art-copy span {
+  color:#f0e6d4;font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:clamp(20px,3vw,32px);font-weight:800;letter-spacing:3px;
+  text-shadow:0 3px 24px rgba(0,0,0,.34);
+}
+.nexus-theme .hero-art-copy small {color:#d6d8ce;letter-spacing:4px;font-size:9px}
+.nexus-theme .visitor-panel {
+  position:relative;margin:0 0 34px;padding:22px 26px;min-height:132px;
+  border:1px solid rgba(177,190,174,.17);border-top:0;
+  border-radius:0 0 20px 20px;
+  background:linear-gradient(115deg,rgba(32,43,36,.94),rgba(24,32,28,.96));
+  box-shadow:0 18px 42px rgba(0,0,0,.14);
+}
+.theme-light.nexus-theme .visitor-panel {background:linear-gradient(115deg,#fff,#f1f4ed);border-color:#dce3d9}
+.nexus-theme .visitor-avatar {
+  width:66px;height:66px;flex-basis:66px;border-radius:19px;
+  background:linear-gradient(145deg,#c8b18a,#8b9d8d);color:#17201a;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 10px 25px rgba(0,0,0,.13);
+}
+.nexus-theme .visitor-avatar svg {fill:none;stroke-width:1.8}
+.nexus-theme .visitor-data {gap:10px}
+.nexus-theme .visitor-data svg {color:#c7ad82}
+.nexus-theme .visitor-data span {color:#9ca99e;font-size:9px;letter-spacing:1px}
+.nexus-theme .visitor-data b {color:#e5e9e1;font-size:12px}
+.nexus-theme .visitor-data .online-text {color:#92cba3}
+.nexus-theme .visitor-chip {
+  padding:7px 11px;border-radius:8px;background:#29372e;border:1px solid #405346;
+  color:#d3dfd3!important;font-size:10px!important;
+}
+.nexus-theme .visitor-chip svg {color:#c7ad82}
+.nexus-theme .visitor-chip.role-chip {background:#292f2c;border-color:#4a514a;color:#c6cfc5!important}
+.nexus-theme .nexus-toolbar {border-color:rgba(178,190,176,.17);margin-bottom:26px}
+.nexus-theme .nexus-toolbar .category-row {gap:9px}
+.nexus-theme .nexus-toolbar .category-pill {
+  min-width:unset;padding:11px 17px;gap:9px;border-radius:11px;
+  background:rgba(28,37,32,.78);border:1px solid #354239;color:#aeb9ae;
+  font-size:11px;transition:transform .22s,border-color .22s,background .22s,color .22s;
+}
+.nexus-theme .nexus-toolbar .category-pill:hover {transform:translateY(-2px);border-color:#8d9d8c;color:#e7eadf}
+.nexus-theme .nexus-toolbar .category-pill.active {
+  background:linear-gradient(135deg,#c5ae88,#8d9f8e);border-color:transparent;color:#172019;
+  box-shadow:0 7px 20px rgba(145,164,139,.18);
+}
+.nexus-theme .nexus-section-heading {margin-bottom:18px}
+.nexus-theme .nexus-section-heading h2 {
+  color:#e9e9df;font-size:23px;letter-spacing:-.7px;font-weight:750;
+}
+.nexus-theme .nexus-section-heading h2 svg {color:#c7ad82;width:21px}
+.nexus-theme .nexus-section-heading p {display:block;color:var(--muted);font-size:11px;margin-top:5px}
+.nexus-theme .nexus-section-heading .result-count {
+  border:1px solid #3d4940;background:#1b2420;color:#c9d0c6;
+  border-radius:8px;padding:8px 10px;font-size:9px;letter-spacing:1px;
+}
+.nexus-theme .nexus-search {
+  height:54px;margin:0 0 22px;border:1px solid #354239;
+  background:rgba(24,32,28,.9);border-radius:13px;box-shadow:0 8px 24px rgba(0,0,0,.08);
+  transition:border-color .22s,box-shadow .22s,transform .22s;
+}
+.nexus-theme .nexus-search:focus-within {
+  border-color:#bda77f;box-shadow:0 0 0 4px rgba(199,173,130,.11),0 12px 28px rgba(0,0,0,.13);
+  transform:translateY(-1px);
+}
+.nexus-theme .nexus-search input {color:var(--text);font-size:12px}
+.nexus-theme .nexus-search input::placeholder {color:#7f8b81}
+.nexus-theme .tool-grid {grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.nexus-theme .tool-card {
+  min-height:190px;padding:21px;border-radius:17px;text-align:left;align-items:stretch;
+  justify-content:flex-start;background:linear-gradient(145deg,rgba(29,39,33,.96),rgba(22,29,25,.98));
+  border:1px solid rgba(158,177,157,.16);box-shadow:0 8px 24px rgba(0,0,0,.12);
+  transition:transform .28s cubic-bezier(.2,.8,.2,1),border-color .28s,box-shadow .28s,background .28s;
+}
+.nexus-theme .tool-card:before {
+  display:block;background:linear-gradient(125deg,rgba(255,255,255,.045),transparent 48%);
+  opacity:0;transition:opacity .28s;
+}
+.nexus-theme .tool-card:hover {
+  transform:translateY(-5px);border-color:rgba(199,173,130,.56);
+  background:linear-gradient(145deg,#26342c,#1b2520);
+  box-shadow:0 18px 36px rgba(0,0,0,.24),0 0 0 1px rgba(199,173,130,.07);
+}
+.nexus-theme .tool-card:hover:before {opacity:1}
+.nexus-theme .tool-card:focus-visible {outline:2px solid #c7ad82;outline-offset:3px}
+.nexus-theme .tool-card .card-top {justify-content:space-between;position:relative}
+.nexus-theme .tool-card .tool-icon {
+  width:42px;height:42px;border:1px solid #4b5a4d;border-radius:13px;
+  background:linear-gradient(145deg,#34463a,#27352d);color:#d6c29c;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+}
+.nexus-theme .tool-card .tool-icon svg {width:20px;height:20px;stroke-width:1.8}
+.nexus-theme .tool-card .card-badges {position:static}
+.nexus-theme .tool-card .tag {background:#35443a;color:#d5c39c;border:1px solid #4d5d4d;border-radius:6px}
+.nexus-theme .tool-card .tag.api {background:#243c31;color:#9ed0ad;border-color:#3d654b}
+.nexus-theme .tool-card .fav-btn {width:30px;height:30px;border:1px solid transparent;border-radius:9px}
+.nexus-theme .tool-card .fav-btn:hover,.nexus-theme .tool-card .fav-btn.saved {color:#e2c58d;background:rgba(199,173,130,.12);border-color:rgba(199,173,130,.2)}
+.nexus-theme .tool-card h3 {font-size:14px;margin:17px 0 7px;color:#eef0e8;letter-spacing:-.25px}
+.nexus-theme .tool-card p {font-size:11px;line-height:1.65;min-height:36px;color:#a2ada3}
+.nexus-theme .tool-card .card-open {margin-top:auto;padding-top:15px;color:#d2bc91;font-size:10px;letter-spacing:.2px}
+.nexus-theme .tool-card .card-open svg {transition:transform .22s}
+.nexus-theme .tool-card:hover .card-open svg {transform:translate(3px,-2px)}
+.nexus-theme .empty {border:1px dashed #536052;border-radius:16px;background:rgba(28,37,32,.48);padding:55px 20px}
+.nexus-theme .empty h3 {color:var(--text)}
+.nexus-theme .empty button {background:#c5ae88;color:#172019;border-radius:9px}
+.nexus-theme .tool-modal,.nexus-theme .info-page-modal {
+  background:#18211c;border:1px solid #48574a;border-radius:19px;
+  box-shadow:0 35px 100px rgba(0,0,0,.52);
+}
+.nexus-theme .modal-head,.nexus-theme .info-page-head {border-color:#39463c}
+.nexus-theme .modal-title h2,.nexus-theme .info-page-head h2 {color:#eff0e8}
+.nexus-theme .modal-title p,.nexus-theme .info-page-head p {color:#a2ada3}
+.nexus-theme .work-area,.nexus-theme .single-input,.nexus-theme .option-row select,.nexus-theme .option-row input {
+  background:#111815;border-color:#3d4b40;color:#edf0e8;border-radius:10px;
+}
+.nexus-theme .work-area:focus,.nexus-theme .single-input:focus,.nexus-theme .option-row select:focus,.nexus-theme .option-row input:focus {
+  border-color:#c7ad82;box-shadow:0 0 0 3px rgba(199,173,130,.12);
+}
+.nexus-theme .run-btn {background:linear-gradient(110deg,#bda77f,#879d8c);color:#172019;box-shadow:0 8px 20px rgba(145,164,139,.16)}
+.nexus-theme .run-btn:hover:not(:disabled) {filter:brightness(1.06);transform:translateY(-1px)}
+.nexus-theme .icon-btn {background:#26332b;border-color:#465449;color:#dce3d9}
+.nexus-theme .output-wrap,.nexus-theme .markdown-preview {border-color:#3b4a40}
+.nexus-theme .output-head {background:#222e27;border-color:#3b4a40;color:#c7d0c5}
+.nexus-theme .output-head button {background:#18211c;border-color:#465449;color:#dce3d9}
+.nexus-theme .notice {background:#4a3522;color:#edc58e}
+.nexus-theme .notice.success {background:#1f3b2b;color:#a2d8b1}
+.nexus-theme .info-page-overlay {background:rgba(5,9,7,.78);backdrop-filter:blur(12px)}
+.nexus-theme .info-page-head {border-color:#39463c}
+.nexus-theme .info-page-kicker {color:#c7ad82}
+.nexus-theme .info-page-close {background:#26332b;border-color:#465449;color:#dce3d9}
+.nexus-theme .info-page-links a,.nexus-theme .vip-page-benefits,.nexus-theme .vip-page-plan {
+  background:#202b24;border-color:#3e4c41;color:#edf0e8;
+}
+.nexus-theme .info-page-links small,.nexus-theme .vip-page-plan small {color:#a5b0a6}
+.nexus-theme .vip-page-plan strong {color:#e0c797}
+.nexus-theme .vip-page-plan button {background:#bda77f;color:#172019}
+.nexus-theme footer {border-color:rgba(178,190,176,.17);color:#89968b}
+.nexus-theme ::selection {background:rgba(199,173,130,.3);color:#fff}
+@keyframes atelierPanelIn {from{opacity:0;transform:translateY(-6px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes atelierRise {from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.nexus-theme .visitor-panel,.nexus-theme .nexus-toolbar,.nexus-theme .nexus-section-heading,.nexus-theme .nexus-search {
+  animation:atelierRise .55s cubic-bezier(.2,.8,.2,1) both;
+}
+.nexus-theme .tool-card {animation:atelierRise .48s cubic-bezier(.2,.8,.2,1) both}
+.nexus-theme .tool-card:nth-child(2){animation-delay:.035s}
+.nexus-theme .tool-card:nth-child(3){animation-delay:.07s}
+.nexus-theme .tool-card:nth-child(4){animation-delay:.105s}
+.nexus-theme .tool-card:nth-child(5){animation-delay:.14s}
+.nexus-theme .tool-card:nth-child(6){animation-delay:.175s}
+@media(max-width:950px) {
+  .nexus-theme .tool-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px) {
+  .app-shell.nexus-theme .nexus-header {background:linear-gradient(180deg,rgba(12,18,15,.64),rgba(12,18,15,.08))!important}
+  .nexus-theme .nexus-hero .hero-art {aspect-ratio:16/9!important;min-height:0!important;border-radius:0 0 18px 18px!important}
+  .nexus-theme .visitor-panel {margin:0 -16px 25px;padding:17px 16px;min-height:126px;border-radius:0 0 18px 18px}
+  .nexus-theme .visitor-avatar {width:52px;height:52px;flex-basis:52px;border-radius:15px}
+  .nexus-theme .visitor-data {gap:8px}
+  .nexus-theme .visitor-data>div {gap:6px}
+  .nexus-theme .visitor-data b {font-size:10px;margin-right:4px}
+  .nexus-theme .visitor-data span {font-size:8px}
+  .nexus-theme .visitor-chip {padding:6px 9px;font-size:9px!important}
+  .nexus-theme .nexus-toolbar {margin-bottom:21px}
+  .nexus-theme .nexus-toolbar .category-row {gap:7px}
+  .nexus-theme .nexus-toolbar .category-pill {padding:10px 13px;font-size:10px}
+  .nexus-theme .nexus-section-heading h2 {font-size:20px}
+  .nexus-theme .nexus-section-heading p {font-size:10px}
+  .nexus-theme .tool-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .nexus-theme .tool-card {min-height:178px;padding:15px;border-radius:14px}
+  .nexus-theme .tool-card h3 {font-size:12px;margin:13px 0 6px}
+  .nexus-theme .tool-card p {font-size:10px;line-height:1.55;min-height:43px}
+  .nexus-theme .tool-card .tool-icon {width:37px;height:37px;border-radius:11px}
+  .nexus-theme .tool-card .card-open {font-size:9px;padding-top:11px}
+  .nexus-theme .info-panel {top:76px;right:10px;width:calc(100vw - 20px);padding:15px;border-radius:17px}
+  .nexus-theme .info-card {padding:11px;gap:11px;border-radius:13px}
+  .nexus-theme .info-icon {width:43px;height:43px;border-radius:12px}
+  .nexus-theme .info-card b {font-size:12px}
+  .nexus-theme .info-card small {font-size:10px}
+  .nexus-theme .tool-modal {max-height:94vh;border-radius:15px}
+  .nexus-theme .modal-head {padding:15px}
+  .nexus-theme .modal-body {padding:15px}
+}
+@media(max-width:390px) {
+  .nexus-theme .tool-card {padding:13px;min-height:174px}
+  .nexus-theme .tool-card h3 {font-size:11px}
+  .nexus-theme .tool-card p {font-size:9px}
+  .nexus-theme .visitor-data>div {gap:5px}
+  .nexus-theme .visitor-avatar {width:46px;height:46px;flex-basis:46px}
+}
+@media(prefers-reduced-motion:reduce) {
+  .nexus-theme .music-panel-content,.nexus-theme .visitor-panel,.nexus-theme .nexus-toolbar,
+  .nexus-theme .nexus-section-heading,.nexus-theme .nexus-search,.nexus-theme .tool-card {
+    animation:none!important;transition:none!important;
+  }
+  .nexus-theme .tool-card:hover,.nexus-theme .info-card:hover {transform:none}
+}
