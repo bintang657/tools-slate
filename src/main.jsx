@@ -205,7 +205,7 @@ function App(){
       <button className="menu-toggle" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Buka menu informasi">{menuOpen?<X/>:<Menu/>}</button>
     </header>
 
-    {menuOpen&&<div className="info-panel"><div className="panel-heading"><div><b>NEXUS MENU</b><span>Informasi dan masukan</span></div><span className="online-pill"><i/> ONLINE</span></div>
+    {menuOpen&&<div className="info-panel"><div className="panel-heading"><div><b>Slate Menu</b><span>Informasi dan masukan</span></div></div>
       <button className="info-card" onClick={()=>{setMenuOpen(false);setInfoPage('about')}}><span className="info-icon"><UserRound/></span><span><b>About Dev</b><small>Profil developer dan kontak resmi.</small></span><ArrowUpRight/></button>
       <a className="info-card" href="https://whatsapp.com/channel/0029VbBmeKA002TCQOFuo61s" target="_blank" rel="noreferrer"><span className="info-icon"><CircleHelp/></span><span><b>Report Bug, Saran & Ide</b><small>Kirim masukan melalui saluran WhatsApp.</small></span><ExternalLink/></a>
       <button className="info-card" onClick={()=>{setMenuOpen(false);setInfoPage('vip')}}><span className="info-icon"><Sparkles/></span><span><b>VIP Access</b><small>Lihat fitur, paket, dan harga akses VIP.</small></span><ArrowUpRight/></button>
