@@ -73,8 +73,8 @@ function App(){
   const filtered=useMemo(()=>tools.filter(t=>(active==='All'||categoryFor(t)===active)&&(!onlyFav||favorites.includes(t.id))&&`${t.name} ${t.desc} ${t.category}`.toLowerCase().includes(query.toLowerCase())),[active,query,onlyFav,favorites])
   const toggleFav=(id)=>setFavorites(old=>{const next=old.includes(id)?old.filter(x=>x!==id):[...old,id];localStorage.setItem('tools-slate-favorites',JSON.stringify(next));return next})
   const tabs=[['All',Grid2X2],['Downloader',DownloadCloud],['Maker',WandSparkles],['Tools',Wrench]]
-  return <div className={`app-shell ${dark?'theme-dark':'theme-light'} slate-theme`}>
-    <header className={`slate-header ${musicPanelOpen?'music-panel-open':''}`}>
+  return <div className={`app-shell ${dark?'theme-dark':'theme-light'} nexus-theme`}>
+    <header className={`nexus-header ${musicPanelOpen?'music-panel-open':''}`}>
       <button className={`music-panel-toggle ${musicPanelOpen?'active':''}`} onClick={()=>setMusicPanelOpen(v=>!v)} aria-label={musicPanelOpen?'Tutup pemutar musik':'Buka pemutar musik'} aria-expanded={musicPanelOpen} title="Music Player">{musicPanelOpen?<X/>:<Music2/>}</button>
       {musicPanelOpen&&<div className="music-panel-content">
         <button className={`info-trigger music-trigger ${playing?'is-playing':''}`} onClick={togglePlayback} aria-label={playing?'Jeda musik':'Putar musik'} title={playing?'Jeda musik':'Putar musik'} disabled={!currentTrack}>{playing?<AudioLines/>:<Play/>}</button>
@@ -93,19 +93,19 @@ function App(){
       <audio ref={audioRef} preload="none" onPlay={()=>setPlaying(true)} onEnded={()=>{if(tracks.length>1)nextTrack();else setPlaying(false)}} onError={()=>setPlaying(false)} />
       <button className="menu-toggle" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Buka menu informasi">{menuOpen?<X/>:<Menu/>}</button>
     </header>
-    {menuOpen&&<div className="info-panel"><div className="panel-heading"><div><b>SLATE MENU</b><span>Informasi dan masukan</span></div><span className="online-pill"><i/> ONLINE</span></div>
+    {menuOpen&&<div className="info-panel"><div className="panel-heading"><div><b>NEXUS MENU</b><span>Informasi dan masukan</span></div><span className="online-pill"><i/> ONLINE</span></div>
       <button className="info-card" onClick={()=>{setMenuOpen(false);setInfoPage('about')}}><span className="info-icon"><UserRound/></span><span><b>About Dev</b><small>Profil developer dan kontak resmi.</small></span><ArrowUpRight/></button>
       <a className="info-card" href="https://whatsapp.com/channel/0029VbBmeKA002TCQOFuo61s" target="_blank" rel="noreferrer"><span className="info-icon"><CircleHelp/></span><span><b>Report Bug, Saran & Ide</b><small>Kirim masukan melalui saluran WhatsApp.</small></span><ExternalLink/></a>
       <button className="info-card" onClick={()=>{setMenuOpen(false);setInfoPage('vip')}}><span className="info-icon"><Sparkles/></span><span><b>VIP Access</b><small>Lihat fitur, paket, dan harga akses VIP.</small></span><ArrowUpRight/></button>
       <a className="info-card whatsapp" href="https://whatsapp.com/channel/0029VbBmeKA002TCQOFuo61s" target="_blank" rel="noreferrer"><span className="info-icon"><MessageCircle/></span><span><b>Komunitas</b><small>Gabung melalui saluran WhatsApp resmi.</small></span><ExternalLink/></a>
     </div>}
     {infoPage&&<InfoPage page={infoPage} onClose={()=>setInfoPage(null)}/> }
-    <main id="top" className="slate-main">
-      <section className="slate-hero"><div className="hero-art">{heroVideo&&<video className="hero-video" autoPlay muted loop playsInline onError={e=>{e.currentTarget.style.display="none"}}><source src={heroVideo} type="video/mp4"/></video>}<div className="hero-art-glow"/><div className="hero-art-copy"><span>TOOLS SLATE</span><small>YOUR DIGITAL SPACE</small></div></div></section>
+    <main id="top" className="nexus-main">
+      <section className="nexus-hero"><div className="hero-art">{heroVideo&&<video className="hero-video" autoPlay muted loop playsInline onError={e=>{e.currentTarget.style.display="none"}}><source src={heroVideo} type="video/mp4"/></video>}<div className="hero-art-glow"/><div className="hero-art-copy"><span>TOOLS SLATE</span><small>YOUR DIGITAL SPACE</small></div></div></section>
       <section className="visitor-panel"><div className="visitor-avatar"><UserRound/></div><div className="visitor-data"><div><Globe2/> <span>NEGARA</span> <b>Indonesia</b><Smartphone/> <span>DEVICE</span> <b>Web</b></div><div><Globe2/> <span>BROWSER</span> <b>Browser</b><AudioLines/> <span>STATUS</span> <b className="online-text">Online</b></div><div className="visitor-tags"><span className="visitor-chip"><Activity/> Tools aktif</span><span className="visitor-chip role-chip">Member</span></div></div></section>
-      <section className="tools-section slate-tools" id="tools"><div className="slate-toolbar"><div className="category-row">{tabs.map(([name,Icon])=><button key={name} className={`category-pill ${active===name?'active':''}`} onClick={()=>{setActive(name);setOnlyFav(false)}}><Icon size={17}/>{name}</button>)}</div></div>
-        <div className="section-heading slate-section-heading"><div><h2><Grid2X2/> {active==='All'?'Semua Tools':active}</h2><p>Temukan tools yang kamu butuhkan.</p></div><span className="result-count">{filtered.length} TOOLS</span></div>
-        <div className="search-wrap slate-search"><Search size={18}/><input ref={searchRef} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari tools..." aria-label="Cari tools"/></div>
+      <section className="tools-section nexus-tools" id="tools"><div className="nexus-toolbar"><div className="category-row">{tabs.map(([name,Icon])=><button key={name} className={`category-pill ${active===name?'active':''}`} onClick={()=>{setActive(name);setOnlyFav(false)}}><Icon size={17}/>{name}</button>)}</div></div>
+        <div className="section-heading nexus-section-heading"><div><h2><Grid2X2/> {active==='All'?'Semua Tools':active}</h2><p>Temukan tools yang kamu butuhkan.</p></div><span className="result-count">{filtered.length} TOOLS</span></div>
+        <div className="search-wrap nexus-search"><Search size={18}/><input ref={searchRef} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari tools..." aria-label="Cari tools"/></div>
         {filtered.length?<div className="tool-grid">{filtered.map(t=><ToolCard key={t.id} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
     </main>
@@ -134,7 +134,7 @@ function InfoPage({page,onClose}){
  </section></div>
 }
 
-function ToolCard({tool,onClick,favorite,onFavorite}){const Icon=tool.icon;return <article className={`tool-card ${tool.comingSoon?'coming-soon':''}`} onClick={()=>!tool.comingSoon&&onClick()} onKeyDown={e=>{if((e.key==='Enter'||e.key===' ')&&!tool.comingSoon){e.preventDefault();onClick()}}} tabIndex={tool.comingSoon?-1:0} role="button" aria-label={`Buka ${tool.name}`}><div className="card-top"><span className="tool-icon"><Icon size={20}/></span><div className="card-badges">{tool.tag&&<span className={`tag ${tool.tag==='API'?'api':''}`}>{tool.tag}</span>}<button type="button" className={`fav-btn ${favorite?'saved':''}`} onClick={e=>{e.stopPropagation();onFavorite()}} aria-label={favorite?`Hapus ${tool.name} dari favorit`:`Tambahkan ${tool.name} ke favorit`} aria-pressed={favorite}><Star size={15} fill={favorite?'currentColor':'none'}/></button></div></div><h3>{tool.name}</h3><p>{tool.desc}</p><span className="card-open">{tool.comingSoon?'Coming soon':'Buka tool'} {!tool.comingSoon&&<ArrowUpRight size={15}/>}</span></article>}
+function ToolCard({tool,onClick,favorite,onFavorite}){const Icon=tool.icon;return <article className={`tool-card ${tool.comingSoon?'coming-soon':''}`} onClick={()=>!tool.comingSoon&&onClick()} onKeyDown={e=>e.key==='Enter'&&!tool.comingSoon&&onClick()} tabIndex={tool.comingSoon?-1:0} role="button"><div className="card-top"><span className="tool-icon"><Icon size={20}/></span><div className="card-badges">{tool.tag&&<span className={`tag ${tool.tag==='API'?'api':''}`}>{tool.tag}</span>}<button className={`fav-btn ${favorite?'saved':''}`} onClick={e=>{e.stopPropagation();onFavorite()}} aria-label="Toggle favorite"><Star size={15} fill={favorite?'currentColor':'none'}/></button></div></div><h3>{tool.name}</h3><p>{tool.desc}</p><span className="card-open">{tool.comingSoon?'Coming soon':'Open tool'} {!tool.comingSoon&&<ArrowUpRight size={15}/>}</span></article>}
 
 function ToolModal({tool,onClose}){
  const [value,setValue]=useState(''),[output,setOutput]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[extra,setExtra]=useState(''),[extra2,setExtra2]=useState(''),[result,setResult]=useState(null)
