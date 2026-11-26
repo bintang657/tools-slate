@@ -66,6 +66,7 @@ function App(){
   const searchRef=useRef(null)
   const albumTracks=musicAlbums.find(album=>album.name===selectedAlbum)?.tracks||[]
   const currentTrack=albumTracks[trackIndex]||albumTracks[0]||null
+  const currentAlbum=musicAlbums.find(album=>album.name===selectedAlbum)
   useEffect(()=>{
     if(musicAlbums.length&&!musicAlbums.some(album=>album.name===selectedAlbum)){
       setSelectedAlbum(musicAlbums[0].name)
@@ -173,9 +174,8 @@ function App(){
       <button className={`music-panel-toggle ${musicPanelOpen?'active':''} ${playing?'is-playing':''}`} onClick={()=>setMusicPanelOpen(v=>!v)} aria-label={musicPanelOpen?'Tutup pemutar musik':'Buka pemutar musik'} aria-expanded={musicPanelOpen} title="Music Player">{musicPanelOpen?<X/>:<Music2/>}</button>
       {musicPanelOpen&&<div className="music-panel-content" role="region" aria-label="Music Player">
         <div className="music-player-top">
-          <div className={`music-cover ${playing?'spinning':''}`} aria-hidden="true"><span>{selectedAlbum.split(/\s+/).filter(Boolean).map(word=>word[0]).join('').slice(0,5)||'S'}</span><i/></div>
+          <div className={`music-cover ${playing?'spinning':''} ${currentAlbum?.cover?'has-artwork':''}`} aria-hidden="true">{currentAlbum?.cover?<img src={currentAlbum.cover} alt=""/>:<Music2 size={23}/>}<i/></div>
           <div className="music-track-info">
-            <span className="music-player-overline">NOW PLAYING · {currentTrack?.album||'YOUR LIBRARY'}</span>
             <strong>{currentTrack?.title||'Music Player'}</strong>
             <small>{currentTrack?currentTrack.artist:'Tambahkan lagu ke folder album untuk mulai'}</small>
             <div className={`music-visualizer ${playing?'active':''}`} aria-label={playing?'Musik sedang diputar':'Musik berhenti'}>{Array.from({length:16},(_,i)=><i key={i} style={{'--bar':`${5+(i*13)%17}px`}}/>)}</div>
