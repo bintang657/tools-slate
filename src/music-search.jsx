@@ -10,8 +10,8 @@ export function MusicSearchModal({ onClose, activeSession, onStartAudio }) {
     event.preventDefault()
     let parsed
     try { parsed = new URL(url.trim()) } catch { setError('Masukkan URL audio langsung yang valid.'); return }
-    if (parsed.protocol !== 'https:') {
-      setError('URL audio harus menggunakan HTTPS.')
+    if (!['https:', 'http:'].includes(parsed.protocol)) {
+      setError('Gunakan URL HTTP atau HTTPS yang valid.')
       return
     }
     const name = title.trim() || parsed.pathname.split('/').pop() || 'Audio dari URL'
@@ -31,8 +31,8 @@ export function MusicSearchModal({ onClose, activeSession, onStartAudio }) {
       <div className="modal-body music-search-body">
         <form className="music-provider-form" onSubmit={startAudio}>
           <label>Judul lagu (opsional)<input value={title} onChange={e => setTitle(e.target.value)} placeholder="Contoh: Nama lagu — Artis" autoComplete="off"/></label>
-          <label><span className="music-url-label"><Link2 size={14}/> URL audio langsung</span><input type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://example.com/song.mp3" autoComplete="url" required/></label>
-          <p className="music-search-note"><ShieldCheck size={15}/> Gunakan URL HTTPS yang langsung mengarah ke file atau stream audio penuh (MP3, M4A, OGG, WAV) dan yang boleh Anda putar. URL halaman YouTube/Spotify tidak dapat dipakai di sini.</p>
+          <label><span className="music-url-label"><Link2 size={14}/> URL MP3 / audio</span><input type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://contoh.com/audio" autoComplete="url" required/></label>
+          <p className="music-search-note"><ShieldCheck size={15}/> URL tidak harus berakhiran .mp3. Pakai alamat HTTP/HTTPS yang responsnya berupa file atau stream MP3/audio penuh. Jika URL membuka halaman web yang hanya berisi tautan MP3, tempel URL file/stream MP3-nya.</p>
           <button className="run-btn" type="submit" disabled={!url.trim()}><Play size={16}/> Putar lagu penuh</button>
         </form>
         {error && <div className="notice">{error}</div>}
