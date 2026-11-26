@@ -10,6 +10,7 @@ import {
   DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone, Image
 } from 'lucide-react'
 import { PhotoHdModal, Mp4ToMp3Modal } from './media-tools.jsx'
+import { MusicSearchModal } from './music-search.jsx'
 import './style.css'
 import { heroVideo } from './media.js'
 
@@ -41,11 +42,12 @@ const tools = [
   { id:'ssl', name:'Certificate Transparency', desc:'Cari catatan sertifikat TLS publik untuk domain.', category:'Security Lab', icon:LockKeyhole, tag:'API' },
   { id:'socialdownloader', name:'Social Media Downloader', desc:'Unduh video publik TikTok dan Instagram.', category:'Downloader', icon:DownloadCloud, tag:'API' },
   { id:'lyricssearch', name:'Lyrics Finder', desc:'Cari lirik lagu berdasarkan judul dan nama artis.', category:'Online Tools', icon:Music2, tag:'API' },
+  { id:'musiclistener', name:'Music Listener', desc:'Cari lagu berdasarkan judul dan dengarkan preview resminya.', category:'Online Tools', icon:Music2, tag:'API' },
 ]
 const categories = ['All','Downloader','Maker','Tools']
 const categoryFor = (tool) => {
   if (tool.category==='Downloader') return 'Downloader'
-  if (['weather','currency','ip','dns','ssl','breach','lyricssearch'].includes(tool.id)) return 'Tools'
+  if (['weather','currency','ip','dns','ssl','breach','lyricssearch','musiclistener'].includes(tool.id)) return 'Tools'
   if (['qr','photohd','mp4mp3','color','markdown'].includes(tool.id)) return 'Maker'
   if (['json','base64','url','hash','uuid','regex','html','text','words','timestamp','unit','percentage','jwt','urlscan'].includes(tool.id)) return 'Tools'
   return 'Downloader'
@@ -112,7 +114,7 @@ function App(){
         {filtered.length?<div className="tool-grid">{filtered.map((t,index)=><ToolCard key={t.id} index={index} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
     </main>
-    {selected&&((selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>:selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='photohd'?<PhotoHdModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='mp4mp3'?<Mp4ToMp3Modal key={selected.id} onClose={()=>setSelected(null)}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
+    {selected&&((selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>:selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='photohd'?<PhotoHdModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='mp4mp3'?<Mp4ToMp3Modal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='musiclistener'?<MusicSearchModal key={selected.id} onClose={()=>setSelected(null)}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
   </div>
 }
 function InfoPage({page,onClose}){
