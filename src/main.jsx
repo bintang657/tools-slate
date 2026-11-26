@@ -7,8 +7,9 @@ import {
   Sun, Star, Globe2, Network, KeyRound, Fingerprint, ScanSearch, LockKeyhole,
   Shield, HeartPulse, Activity, CheckCircle2, AlertTriangle, AudioLines, Volume2, Play,
   SkipForward, UserRound, Info, CircleHelp, MessageCircle, ShoppingCart, Compass,
-  DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone
+  DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone, Image
 } from 'lucide-react'
+import { PhotoHdModal, Mp4ToMp3Modal } from './media-tools.jsx'
 import './style.css'
 import { heroVideo } from './media.js'
 
@@ -21,6 +22,8 @@ const tools = [
   { id:'regex', name:'Regex Tester', desc:'Uji regular expression dan hasil match.', category:'Developer', icon:Regex },
   { id:'html', name:'HTML Entity Encoder', desc:'Encode dan decode karakter HTML.', category:'Developer', icon:Code2 },
   { id:'qr', name:'QR Code Generator', desc:'Buat QR code dari teks atau tautan.', category:'Image & Design', icon:QrCode, tag:'Popular' },
+  { id:'photohd', name:'Foto HD Upscaler', desc:'Perbesar resolusi foto hingga 4× secara lokal.', category:'Image & Design', icon:Image, tag:'New' },
+  { id:'mp4mp3', name:'MP4 to MP3', desc:'Ekstrak audio MP3 dari video MP4 di browser.', category:'Image & Design', icon:AudioLines, tag:'New' },
   { id:'color', name:'Color Converter', desc:'Konversi HEX, RGB, dan HSL.', category:'Image & Design', icon:Palette },
   { id:'text', name:'Text Case Converter', desc:'Ubah teks ke berbagai format.', category:'Text', icon:Type },
   { id:'words', name:'Word Counter', desc:'Hitung kata, karakter, kalimat, paragraf.', category:'Text', icon:FileText },
@@ -43,7 +46,7 @@ const categories = ['All','Downloader','Maker','Tools']
 const categoryFor = (tool) => {
   if (tool.category==='Downloader') return 'Downloader'
   if (['weather','currency','ip','dns','ssl','breach','lyricssearch'].includes(tool.id)) return 'Tools'
-  if (['qr','color','markdown'].includes(tool.id)) return 'Maker'
+  if (['qr','photohd','mp4mp3','color','markdown'].includes(tool.id)) return 'Maker'
   if (['json','base64','url','hash','uuid','regex','html','text','words','timestamp','unit','percentage','jwt','urlscan'].includes(tool.id)) return 'Tools'
   return 'Downloader'
 }
@@ -109,7 +112,7 @@ function App(){
         {filtered.length?<div className="tool-grid">{filtered.map((t,index)=><ToolCard key={t.id} index={index} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
     </main>
-    {selected&&((selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>:selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
+    {selected&&((selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>:selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='photohd'?<PhotoHdModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='mp4mp3'?<Mp4ToMp3Modal key={selected.id} onClose={()=>setSelected(null)}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
   </div>
 }
 function InfoPage({page,onClose}){
