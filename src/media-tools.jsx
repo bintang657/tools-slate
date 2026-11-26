@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Download, Image, AudioLines, Upload, X, Zap, RefreshCw, ShieldCheck } from 'lucide-react'
 import * as lamejs from '@breezystack/lamejs'
+import { CustomSelect } from './custom-select.jsx'
 
 export function PhotoHdModal({ onClose }) {
   const [file, setFile] = useState(null)
@@ -84,7 +85,7 @@ export function PhotoHdModal({ onClose }) {
       <div className="modal-body media-tool-body">
         <label className="media-file-pick"><Upload size={19}/><span><b>{file ? file.name : 'Pilih foto untuk ditingkatkan'}</b><small>JPG, PNG, WebP · Maksimal 25 MB</small></span><input type="file" accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={e => { chooseFile(e.target.files?.[0]); e.target.value = '' }}/></label>
         {preview && <div className="photo-preview"><img src={preview} alt="Pratinjau foto yang dipilih"/><span>{file?.name}</span></div>}
-        <div className="media-control-row"><label htmlFor="photo-scale">Ukuran hasil</label><select id="photo-scale" value={scale} onChange={e => setScale(e.target.value)}><option value="2">2× — seimbang</option><option value="3">3× — lebih besar</option><option value="4">4× — maksimal</option></select></div>
+        <div className="media-control-row"><label htmlFor="photo-scale">Ukuran hasil</label><CustomSelect id="photo-scale" ariaLabel="Ukuran hasil" value={scale} onChange={e => setScale(e.target.value)} options={[{value:"2",label:"2× — seimbang"},{value:"3",label:"3× — lebih besar"},{value:"4",label:"4× — maksimal"}]}/></div>
         <p className="media-privacy"><ShieldCheck size={15}/> Foto diproses lokal dan tidak diunggah. Upscaling memakai interpolasi berkualitas tinggi, bukan rekonstruksi AI.</p>
         <button className="run-btn" onClick={upscale} disabled={!file || busy}>{busy ? <RefreshCw className="spin" size={17}/> : <Zap size={17}/>} {busy ? 'Memproses foto...' : 'Tingkatkan ke HD'}</button>
         {error && <div className="notice">{error}</div>}
@@ -193,7 +194,7 @@ export function Mp4ToMp3Modal({ onClose }) {
       <div className="modal-body media-tool-body">
         <label className="media-file-pick"><Upload size={19}/><span><b>{file ? file.name : 'Pilih video MP4'}</b><small>MP4 · Maksimal 100 MB</small></span><input type="file" accept="video/mp4,.mp4" disabled={busy} onChange={e => { setFile(e.target.files?.[0] || null); setError(''); setResult(null); setProgress(0); if (resultRef.current) URL.revokeObjectURL(resultRef.current); resultRef.current = ''; e.target.value = '' }}/></label>
         {file && <div className="media-file-info"><span><b>{file.name}</b><small>{formatSize(file.size)}</small></span><button disabled={busy} onClick={() => { setFile(null); setResult(null); setError(''); if (resultRef.current) URL.revokeObjectURL(resultRef.current); resultRef.current = '' }} aria-label="Hapus video"><X size={16}/></button></div>}
-        <div className="media-control-row"><label htmlFor="mp3-bitrate">Kualitas MP3</label><select id="mp3-bitrate" value={bitrate} onChange={e => setBitrate(e.target.value)}><option value="128">128 kbps — ukuran kecil</option><option value="192">192 kbps — seimbang</option><option value="256">256 kbps — kualitas tinggi</option></select></div>
+        <div className="media-control-row"><label htmlFor="mp3-bitrate">Kualitas MP3</label><CustomSelect id="mp3-bitrate" ariaLabel="Kualitas MP3" value={bitrate} onChange={e => setBitrate(e.target.value)} options={[{value:"128",label:"128 kbps — ukuran kecil"},{value:"192",label:"192 kbps — seimbang"},{value:"256",label:"256 kbps — kualitas tinggi"}]}/></div>
         <p className="media-privacy"><ShieldCheck size={15}/> Video diproses lokal di perangkat. Tidak ada file yang diunggah.</p>
         <button className="run-btn" onClick={convert} disabled={!file || busy}>{busy ? <RefreshCw className="spin" size={17}/> : <AudioLines size={17}/>} {busy ? `Mengonversi... ${progress}%` : 'Konversi ke MP3'}</button>
         {busy && <div className="media-progress" role="progressbar" aria-valuenow={progress} aria-valuemin="0" aria-valuemax="100"><span style={{ width: `${progress}%` }}/></div>}
