@@ -88,9 +88,9 @@ function App(){
           <input className="volume-range" aria-label="Volume musik" type="range" min="0" max="1" step="0.01" value={muted?0:volume} disabled={!currentTrack} onChange={e=>{setVolume(Number(e.target.value));setMuted(false)}} />
           <button title={playing?'Pause':'Putar musik'} disabled={!currentTrack} onClick={togglePlayback} aria-label={playing?'Pause':'Putar musik'}>{playing?<span className="pause-mark">Ⅱ</span>:<Play size={17}/>}</button>
           <button title="Lagu berikutnya" disabled={!currentTrack||tracks.length<2} onClick={nextTrack} aria-label="Lagu berikutnya"><SkipForward size={17}/></button>
-          <audio ref={audioRef} preload="none" onPlay={()=>setPlaying(true)} onEnded={()=>{if(tracks.length>1)nextTrack();else setPlaying(false)}} onError={()=>setPlaying(false)} />
         </div>
       </div>}
+      <audio ref={audioRef} preload="none" onPlay={()=>setPlaying(true)} onEnded={()=>{if(tracks.length>1)nextTrack();else setPlaying(false)}} onError={()=>setPlaying(false)} />
       <button className="menu-toggle" onClick={()=>setMenuOpen(!menuOpen)} aria-label="Buka menu informasi">{menuOpen?<X/>:<Menu/>}</button>
     </header>
     {menuOpen&&<div className="info-panel"><div className="panel-heading"><div><b>NEXUS MENU</b><span>Informasi dan masukan</span></div><span className="online-pill"><i/> ONLINE</span></div>
