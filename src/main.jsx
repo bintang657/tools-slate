@@ -109,6 +109,7 @@ function App(){
   const [selectedAlbum,setSelectedAlbum]=useState(()=>musicAlbums[0]?.name||''), [volume,setVolume]=useState(0.72), [muted,setMuted]=useState(false)
   const [audioTime,setAudioTime]=useState(0), [audioDuration,setAudioDuration]=useState(0)
   const audioRef=useRef(null)
+  const portalRoot=document.getElementById('overlay-root')
   const visualizerRef=useRef(null), audioContextRef=useRef(null), mediaSourceRef=useRef(null), analyserRef=useRef(null)
   const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
   const [onlyFav,setOnlyFav]=useState(false)
@@ -297,8 +298,8 @@ function App(){
         {filtered.length?<div className="tool-grid">{filtered.map((t,index)=><ToolCard key={t.id} index={index} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
     </main>
-    {!selected&&!infoPage&&!menuOpen&&!slateOpen&&createPortal(<button className="slate-fab" onClick={()=>setSlateOpen(true)} aria-label="Buka Slate" aria-expanded={slateOpen}><Sparkles size={19}/><span>Slate</span></button>,document.body)}
-    {slateOpen&&createPortal(<React.Suspense fallback={<div className="ai-widget-loading" role="status">Membuka Slate…</div>}><AISlateModal onClose={()=>setSlateOpen(false)}/></React.Suspense>,document.body)}
+    {portalRoot&&!selected&&!infoPage&&!menuOpen&&!slateOpen&&createPortal(<button className="slate-fab" onClick={()=>setSlateOpen(true)} aria-label="Buka Slate" aria-expanded={slateOpen}><Sparkles size={19}/><span>Slate</span></button>,portalRoot)}
+    {portalRoot&&slateOpen&&createPortal(<React.Suspense fallback={<div className="ai-widget-loading" role="status">Membuka Slate…</div>}><AISlateModal onClose={()=>setSlateOpen(false)}/></React.Suspense>,portalRoot)}
     {selected&&<React.Suspense fallback={<div className="modal-backdrop advanced-backdrop"><div className="advanced-loading" role="status"><span className="spin">◌</span> Memuat tool…</div></div>}>
       {(selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>
         :selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>
