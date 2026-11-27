@@ -1,6 +1,6 @@
 // language: JavaScript, file: api/_lib/guard.js, target: Vercel Node 20+
 // Shared SSRF guard: hostname validation, IP block, redirect-safe fetch.
-// Dipakai oleh safelinku.js, social-download.js, cert-transparency.js.
+// Dipakai oleh social-download.js dan cert-transparency.js.
 
 const BLOCKED_HOSTNAMES = new Set([
   'localhost',
