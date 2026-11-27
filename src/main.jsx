@@ -1,6 +1,7 @@
 // language: JSX, file: src/main.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal, createRoot } from 'react-dom/client'
+import { createRoot } from 'react-dom/client'
+import { createPortal } from 'react-dom'
 import {
   Search, Menu, X, VolumeX, ArrowUpRight, Sparkles, Code2, Type, Hash, CloudSun,
   Coins, QrCode, Braces, Link2, Clock3, Palette, Calculator, Regex, FileText,
