@@ -20,6 +20,7 @@ const OcrWorkbenchModal = loadAdvancedModal('OcrWorkbenchModal')
 const DomainSecurityModal = loadAdvancedModal('DomainSecurityModal')
 const RegexWorkbenchModal = loadAdvancedModal('RegexWorkbenchModal')
 const JwtWorkbenchModal = loadAdvancedModal('JwtWorkbenchModal')
+const AISlateModal = React.lazy(() => import('./ai-slate.jsx').then(module => ({ default: module.AISlateModal })))
 import { musicAlbums } from './music-library.js'
 import { CustomSelect } from './custom-select.jsx'
 import './style.css'
@@ -28,6 +29,7 @@ import { heroVideo } from './media.js'
 const tools = [
   { id:'json', name:'JSON Studio', desc:'Format, validasi JSON Schema, diff, dan jalankan JSONPath.', category:'Developer', icon:Braces, tag:'Popular' },
   { id:'apiworkbench', name:'API Request Builder', desc:'Kirim request HTTP dan inspeksi respons API.', category:'Developer', icon:Network, tag:'New' },
+  { id:'aislate', name:'AI Slate', desc:'Asisten AI untuk coding, menulis, belajar, dan ide.', category:'Online Tools', icon:Sparkles, tag:'AI' },
   { id:'base64', name:'Base64 Converter', desc:'Encode dan decode teks Base64.', category:'Developer', icon:Code2 },
   { id:'url', name:'URL Encoder', desc:'Encode dan decode URL atau query string.', category:'Developer', icon:Link2 },
   { id:'hash', name:'SHA-256 Generator', desc:'Buat hash SHA-256 secara lokal di browser.', category:'Developer', icon:ShieldCheck },
@@ -63,7 +65,7 @@ const categories = ['All','Downloader','Maker','Tools']
 const formatTime = value => {const seconds=Math.max(0,Math.floor(Number(value)||0));return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}
 const categoryFor = (tool) => {
   if (tool.category==='Downloader') return 'Downloader'
-  if (['weather','currency','ip','dns','ssl','breach','lyricssearch','domainsecurity'].includes(tool.id)) return 'Tools'
+  if (['weather','currency','ip','dns','ssl','breach','lyricssearch','domainsecurity','aislate'].includes(tool.id)) return 'Tools'
   if (['qr','photohd','mp4mp3','pdftoolkit','imageprivacy','ocr','color','markdown'].includes(tool.id)) return 'Maker'
   if (['json','apiworkbench','base64','url','hash','uuid','regex','html','text','words','timestamp','unit','percentage','jwt','urlscan'].includes(tool.id)) return 'Tools'
   return 'Downloader'
@@ -301,6 +303,7 @@ function App(){
         :selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>
         :selected.id==='photohd'?<PhotoHdModal key={selected.id} onClose={()=>setSelected(null)}/>
         :selected.id==='mp4mp3'?<Mp4ToMp3Modal key={selected.id} onClose={()=>setSelected(null)}/>
+        :selected.id==='aislate'?<AISlateModal key={selected.id} onClose={()=>setSelected(null)}/>
         :selected.id==='apiworkbench'?<ApiWorkbenchModal key={selected.id} onClose={()=>setSelected(null)}/>
         :selected.id==='json'?<JsonStudioModal key={selected.id} onClose={()=>setSelected(null)}/>
         :selected.id==='pdftoolkit'?<PdfToolkitModal key={selected.id} onClose={()=>setSelected(null)}/>
