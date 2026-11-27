@@ -42,7 +42,7 @@ export default async function handler(req, res) {
   if (!rateLimit(ip)) return respond(res, 429, { error: 'Batas penggunaan sementara tercapai. Tunggu satu menit lalu coba lagi.' })
 
   const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return respond(res, 503, { error: 'Slate belum diaktifkan. Tambahkan GEMINI_API_KEY di Environment Variables proyek Vercel.' })
+  if (!apiKey) return respond(res, 503, { error: 'Layanan Slate belum diaktifkan. Hubungi pengelola situs.' })
 
   let body = req.body
   if (typeof body === 'string') {
@@ -105,10 +105,10 @@ export default async function handler(req, res) {
     if (!upstream.ok) {
       await upstream.json().catch(() => ({}))
       const error = upstream.status === 429
-        ? 'Kuota gratis Gemini sedang habis. Tunggu sampai kuota pulih lalu coba lagi.'
+        ? 'Kuota gratis Slate sedang habis. Tunggu sampai kuota pulih lalu coba lagi.'
         : upstream.status === 400 || upstream.status === 403
-          ? 'Gemini menolak permintaan. Periksa API key, akses model, dan status Free Tier di Google AI Studio.'
-          : 'Layanan Gemini sedang bermasalah. Coba lagi sebentar.'
+          ? 'Slate tidak dapat memproses permintaan. Periksa konfigurasi layanan AI.'
+          : 'Layanan Slate sedang bermasalah. Coba lagi sebentar.'
       return respond(res, upstream.status === 429 ? 429 : 502, { error })
     }
     if (!upstream.body) return respond(res, 502, { error: 'Koneksi streaming tidak tersedia. Coba lagi.' })
@@ -131,7 +131,7 @@ export default async function handler(req, res) {
       if (!raw || raw === '[DONE]') return
       try {
         const event = JSON.parse(raw)
-        if (event.error) throw new Error(event.error.message || 'Gemini gagal membuat jawaban.')
+        if (event.error) throw new Error('Slate mengalami kendala saat membuat jawaban.')
         const text = event.candidates?.[0]?.content?.parts?.map(part => part.text || '').join('') || ''
         if (text) sendEvent('token', { text })
       } catch (error) {
@@ -164,7 +164,7 @@ export default async function handler(req, res) {
       if (!res.writableEnded) res.end()
     } else {
       return respond(res, error.name === 'AbortError' ? 504 : 502, {
-        error: error.name === 'AbortError' ? 'Gemini merespons terlalu lama. Coba kirim ulang.' : 'Tidak dapat menghubungi Gemini saat ini.',
+        error: error.name === 'AbortError' ? 'Slate merespons terlalu lama. Coba kirim ulang.' : 'Tidak dapat menghubungi layanan Slate saat ini.',
       })
     }
   } finally { clearTimeout(timeout) }
