@@ -1577,7 +1577,7 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 .ai-mode-bar button.active { border-color: rgba(101,204,234,.2); background: rgba(62,164,198,.11); color: #a9eaff; }
 .ai-message-scroll { display: flex; flex-direction: column; gap: 20px; min-height: 0; overflow: auto; padding: 24px clamp(16px, 5vw, 58px) 25px; scroll-behavior: smooth; }
 .ai-welcome { width: min(590px, 100%); margin: auto; text-align: center; }
-.ai-welcome-orb { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 15px; border: 1px solid rgba(109,215,239,.28); border-radius: 18px; background: radial-gradient(circle at 35% 20%, rgba(83,201,230,.24), rgba(111,104,206,.15)); color: #9deeff; box-shadow: 0 0 45px rgba(40,156,191,.14), inset 0 1px rgba(255,255,255,.12); }
+.ai-welcome-orb { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 15px; border: 0; border-radius: 0; background: transparent; color: #9deeff; box-shadow: none; }
 .ai-kicker { color: #60a9c5; font: 700 8px/1.4 'DM Mono', monospace; letter-spacing: .17em; }
 .ai-welcome h2 { margin: 10px 0 8px; color: #edf9ff; font: 700 clamp(21px, 3vw, 29px)/1.2 'Manrope', sans-serif; letter-spacing: -.04em; }
 .ai-welcome > p { max-width: 430px; margin: 0 auto; color: #91a8b9; font-size: 11px; line-height: 1.7; }
@@ -1587,7 +1587,7 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 .ai-suggestion-grid button span { color: #55bbd7; font: 700 8px 'DM Mono', monospace; }
 .ai-message { display: flex; align-items: flex-start; gap: 11px; width: min(720px, 100%); margin: 0 auto; }
 .ai-message-avatar { display: grid; place-items: center; flex: 0 0 30px; width: 30px; height: 30px; border: 1px solid rgba(133,192,221,.16); border-radius: 10px; background: rgba(255,255,255,.045); color: #a8c9dc; font-size: 10px; font-weight: 800; }
-.ai-message.assistant .ai-message-avatar { border-color: rgba(94,207,230,.25); background: rgba(47,157,188,.12); color: #86e5f8; }
+.ai-message.assistant .ai-message-avatar { border: 0; border-radius: 0; background: transparent; color: #86e5f8; }
 .ai-message-body { min-width: 0; flex: 1; }
 .ai-message-label { margin: 2px 0 7px; color: #6f8da0; font: 700 8px/1.3 'DM Mono', monospace; letter-spacing: .1em; }
 .ai-message-content { color: #d4e2ec; font-size: 12px; line-height: 1.75; overflow-wrap: anywhere; }
