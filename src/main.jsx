@@ -11,22 +11,35 @@ import {
   DownloadCloud, WandSparkles, Wrench, Grid2X2, Music2, Video, Smartphone, Image, Battery, BatteryCharging
 } from 'lucide-react'
 import { PhotoHdModal, Mp4ToMp3Modal } from './media-tools.jsx'
+const loadAdvancedModal = name => React.lazy(() => import('./advanced-tools.jsx').then(module => ({ default: module[name] })))
+const ApiWorkbenchModal = loadAdvancedModal('ApiWorkbenchModal')
+const JsonStudioModal = loadAdvancedModal('JsonStudioModal')
+const PdfToolkitModal = loadAdvancedModal('PdfToolkitModal')
+const ImagePrivacyModal = loadAdvancedModal('ImagePrivacyModal')
+const OcrWorkbenchModal = loadAdvancedModal('OcrWorkbenchModal')
+const DomainSecurityModal = loadAdvancedModal('DomainSecurityModal')
+const RegexWorkbenchModal = loadAdvancedModal('RegexWorkbenchModal')
+const JwtWorkbenchModal = loadAdvancedModal('JwtWorkbenchModal')
 import { musicAlbums } from './music-library.js'
 import { CustomSelect } from './custom-select.jsx'
 import './style.css'
 import { heroVideo } from './media.js'
 
 const tools = [
-  { id:'json', name:'JSON Formatter', desc:'Format, validate, dan minify data JSON.', category:'Developer', icon:Braces, tag:'Popular' },
+  { id:'json', name:'JSON Studio', desc:'Format, validasi JSON Schema, diff, dan jalankan JSONPath.', category:'Developer', icon:Braces, tag:'Popular' },
+  { id:'apiworkbench', name:'API Request Builder', desc:'Kirim request HTTP dan inspeksi respons API.', category:'Developer', icon:Network, tag:'New' },
   { id:'base64', name:'Base64 Converter', desc:'Encode dan decode teks Base64.', category:'Developer', icon:Code2 },
   { id:'url', name:'URL Encoder', desc:'Encode dan decode URL atau query string.', category:'Developer', icon:Link2 },
   { id:'hash', name:'SHA-256 Generator', desc:'Buat hash SHA-256 secara lokal di browser.', category:'Developer', icon:ShieldCheck },
   { id:'uuid', name:'UUID Generator', desc:'Generate UUID v4 untuk development.', category:'Developer', icon:Hash },
-  { id:'regex', name:'Regex Tester', desc:'Uji regular expression dan hasil match.', category:'Developer', icon:Regex },
+  { id:'regex', name:'Regex Workbench', desc:'Uji pola, flag, indeks match, dan capture groups.', category:'Developer', icon:Regex, tag:'New' },
   { id:'html', name:'HTML Entity Encoder', desc:'Encode dan decode karakter HTML.', category:'Developer', icon:Code2 },
   { id:'qr', name:'QR Code Generator', desc:'Buat QR code dari teks atau tautan.', category:'Image & Design', icon:QrCode, tag:'Popular' },
   { id:'photohd', name:'Foto HD Upscaler', desc:'Perbesar resolusi foto hingga 4× secara lokal.', category:'Image & Design', icon:Image, tag:'New' },
   { id:'mp4mp3', name:'MP4 to MP3', desc:'Ekstrak audio MP3 dari video MP4 di browser.', category:'Image & Design', icon:AudioLines, tag:'New' },
+  { id:'pdftoolkit', name:'PDF Toolkit', desc:'Gabungkan, pisahkan, susun, dan optimalkan PDF lokal.', category:'Image & Design', icon:FileText, tag:'New' },
+  { id:'imageprivacy', name:'Image Privacy Lab', desc:'Konversi, resize, kompres, dan hapus metadata foto.', category:'Image & Design', icon:Image, tag:'New' },
+  { id:'ocr', name:'OCR Gambar', desc:'Ekstrak teks dari foto dan screenshot.', category:'Image & Design', icon:ScanSearch, tag:'New' },
   { id:'color', name:'Color Converter', desc:'Konversi HEX, RGB, dan HSL.', category:'Image & Design', icon:Palette },
   { id:'text', name:'Text Case Converter', desc:'Ubah teks ke berbagai format.', category:'Text', icon:Type },
   { id:'words', name:'Word Counter', desc:'Hitung kata, karakter, kalimat, paragraf.', category:'Text', icon:FileText },
@@ -38,7 +51,8 @@ const tools = [
   { id:'currency', name:'Currency Converter', desc:'Konversi kurs referensi mata uang.', category:'Online Tools', icon:Coins, tag:'API' },
   { id:'ip', name:'IP Lookup', desc:'Lihat informasi jaringan dan lokasi perkiraan IP.', category:'Security Lab', icon:Globe2, tag:'API' },
   { id:'dns', name:'DNS Lookup', desc:'Periksa record DNS melalui DNS-over-HTTPS.', category:'Security Lab', icon:Network, tag:'API' },
-  { id:'jwt', name:'JWT Decoder', desc:'Decode header dan payload token JWT secara lokal.', category:'Security Lab', icon:KeyRound },
+  { id:'jwt', name:'JWT Workbench', desc:'Decode claims, waktu token, dan peringatan keamanan.', category:'Security Lab', icon:KeyRound, tag:'New' },
+  { id:'domainsecurity', name:'Domain Security Checker', desc:'Audit SPF, DMARC, DKIM, DNSSEC, CAA, MX, dan CT.', category:'Security Lab', icon:Shield, tag:'New' },
   { id:'breach', name:'Password Exposure Check', desc:'Periksa hash password dengan k-anonymity.', category:'Security Lab', icon:Fingerprint, tag:'API' },
   { id:'urlscan', name:'URL Security Analyzer', desc:'Analisis skema, hostname, port, dan indikator URL.', category:'Security Lab', icon:ScanSearch },
   { id:'ssl', name:'Certificate Transparency', desc:'Cari catatan sertifikat TLS publik untuk domain.', category:'Security Lab', icon:LockKeyhole, tag:'API' },
@@ -49,9 +63,9 @@ const categories = ['All','Downloader','Maker','Tools']
 const formatTime = value => {const seconds=Math.max(0,Math.floor(Number(value)||0));return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}
 const categoryFor = (tool) => {
   if (tool.category==='Downloader') return 'Downloader'
-  if (['weather','currency','ip','dns','ssl','breach','lyricssearch'].includes(tool.id)) return 'Tools'
-  if (['qr','photohd','mp4mp3','color','markdown'].includes(tool.id)) return 'Maker'
-  if (['json','base64','url','hash','uuid','regex','html','text','words','timestamp','unit','percentage','jwt','urlscan'].includes(tool.id)) return 'Tools'
+  if (['weather','currency','ip','dns','ssl','breach','lyricssearch','domainsecurity'].includes(tool.id)) return 'Tools'
+  if (['qr','photohd','mp4mp3','pdftoolkit','imageprivacy','ocr','color','markdown'].includes(tool.id)) return 'Maker'
+  if (['json','apiworkbench','base64','url','hash','uuid','regex','html','text','words','timestamp','unit','percentage','jwt','urlscan'].includes(tool.id)) return 'Tools'
   return 'Downloader'
 }
 
@@ -282,7 +296,21 @@ function App(){
         {filtered.length?<div className="tool-grid">{filtered.map((t,index)=><ToolCard key={t.id} index={index} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
     </main>
-    {selected&&((selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>:selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='photohd'?<PhotoHdModal key={selected.id} onClose={()=>setSelected(null)}/>:selected.id==='mp4mp3'?<Mp4ToMp3Modal key={selected.id} onClose={()=>setSelected(null)}/>:<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>)}
+    {selected&&<React.Suspense fallback={<div className="modal-backdrop advanced-backdrop"><div className="advanced-loading" role="status"><span className="spin">◌</span> Memuat tool…</div></div>}>
+      {(selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>
+        :selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>
+        :selected.id==='photohd'?<PhotoHdModal key={selected.id} onClose={()=>setSelected(null)}/>
+        :selected.id==='mp4mp3'?<Mp4ToMp3Modal key={selected.id} onClose={()=>setSelected(null)}/>
+        :selected.id==='apiworkbench'?<ApiWorkbenchModal key={selected.id} onClose={()=>setSelected(null)}/>
+        :selected.id==='json'?<JsonStudioModal key={selected.id} onClose={()=>setSelected(null)}/>
+        :selected.id==='pdftoolkit'?<PdfToolkitModal key={selected.id} onClose={()=>setSelected(null)}/>
+        :selected.id==='imageprivacy'?<ImagePrivacyModal key={selected.id} onClose={()=>setSelected(null)}/>
+        :selected.id==='ocr'?<OcrWorkbenchModal key={selected.id} onClose={()=>setSelected(null)}/>
+        :selected.id==='domainsecurity'?<DomainSecurityModal key={selected.id} onClose={()=>setSelected(null)}/>
+        :selected.id==='regex'?<RegexWorkbenchModal key={selected.id} onClose={()=>setSelected(null)}/>
+        :selected.id==='jwt'?<JwtWorkbenchModal key={selected.id} onClose={()=>setSelected(null)}/>
+        :<ToolModal key={selected.id} tool={selected} onClose={()=>setSelected(null)}/>}
+    </React.Suspense>}
   </div>
 }
 function InfoPage({page,onClose}){

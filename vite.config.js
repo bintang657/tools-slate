@@ -11,6 +11,7 @@ export default defineConfig(({ command }) => ({
           'localhost',
           '127.0.0.1',
           '.vercel.app',
+          '.e2b.app',
           'tools-slate.vercel.app',
         ],
       }
