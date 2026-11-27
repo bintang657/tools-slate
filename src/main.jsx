@@ -23,6 +23,7 @@ const RegexWorkbenchModal = loadAdvancedModal('RegexWorkbenchModal')
 const JwtWorkbenchModal = loadAdvancedModal('JwtWorkbenchModal')
 const AISlateModal = React.lazy(() => import('./ai-slate.jsx').then(module => ({ default: module.AISlateModal })))
 import { musicAlbums } from './music-library.js'
+import { filterAndSortTools, getToolStorage, pushRecentTool, readToolIds } from './tool-catalog.js'
 import { CustomSelect } from './custom-select.jsx'
 import './style.css'
 import { heroVideo } from './media.js'
@@ -61,16 +62,7 @@ const tools = [
   { id:'socialdownloader', name:'Social Media Downloader', desc:'Unduh video publik TikTok dan Instagram.', category:'Downloader', icon:DownloadCloud, tag:'API' },
   { id:'lyricssearch', name:'Lyrics Finder', desc:'Cari lirik lagu berdasarkan judul dan nama artis.', category:'Online Tools', icon:Music2, tag:'API' },
 ]
-const categories = ['All','Downloader','Maker','Tools']
 const formatTime = value => {const seconds=Math.max(0,Math.floor(Number(value)||0));return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}
-const categoryFor = (tool) => {
-  if (tool.category==='Downloader') return 'Downloader'
-  if (['weather','currency','ip','dns','ssl','breach','lyricssearch','domainsecurity'].includes(tool.id)) return 'Tools'
-  if (['qr','photohd','mp4mp3','pdftoolkit','imageprivacy','ocr','color','markdown'].includes(tool.id)) return 'Maker'
-  if (['json','apiworkbench','base64','url','hash','uuid','regex','html','text','words','timestamp','unit','percentage','jwt','urlscan'].includes(tool.id)) return 'Tools'
-  return 'Downloader'
-}
-
 const timezoneCountryCodes = {
   'Asia/Jakarta':'ID','Asia/Pontianak':'ID','Asia/Makassar':'ID','Asia/Jayapura':'ID',
   'Asia/Singapore':'SG','Asia/Kuala_Lumpur':'MY','Asia/Bangkok':'TH','Asia/Manila':'PH',
@@ -112,8 +104,10 @@ function App(){
   const audioRef=useRef(null)
   const portalRoot=document.getElementById('overlay-root')
   const visualizerRef=useRef(null), audioContextRef=useRef(null), mediaSourceRef=useRef(null), analyserRef=useRef(null)
-  const [dark,setDark]=useState(true), [favorites,setFavorites]=useState(()=>{try{return JSON.parse(localStorage.getItem('tools-slate-favorites')||'[]')}catch{return []}})
-  const [onlyFav,setOnlyFav]=useState(false)
+  const [dark,setDark]=useState(true)
+  const [favorites,setFavorites]=useState(()=>readToolIds(getToolStorage(),'tools-slate-favorites',new Set(tools.map(tool => tool.id))))
+  const [recentTools,setRecentTools]=useState(()=>readToolIds(getToolStorage(),'tools-slate-recent',new Set(tools.map(tool => tool.id)),8))
+  const [onlyFav,setOnlyFav]=useState(false), [onlyRecent,setOnlyRecent]=useState(false), [sortBy,setSortBy]=useState('default')
   const [visitorDetails]=useState(detectVisitorDetails)
   const [batteryInfo,setBatteryInfo]=useState({level:null,charging:false,supported:null})
   useEffect(()=>{
@@ -244,8 +238,14 @@ function App(){
     }
     window.addEventListener('keydown',onKeyDown);return ()=>window.removeEventListener('keydown',onKeyDown)
   },[selected,menuOpen,infoPage,slateOpen])
-  const filtered=useMemo(()=>tools.filter(t=>(active==='All'||categoryFor(t)===active)&&(!onlyFav||favorites.includes(t.id))&&`${t.name} ${t.desc} ${t.category}`.toLowerCase().includes(query.toLowerCase())),[active,query,onlyFav,favorites])
-  const toggleFav=(id)=>setFavorites(old=>{const next=old.includes(id)?old.filter(x=>x!==id):[...old,id];localStorage.setItem('tools-slate-favorites',JSON.stringify(next));return next})
+  const filtered=useMemo(()=>filterAndSortTools(tools,{category:active,query,favorites,onlyFavorites:onlyFav,onlyRecent,recent:recentTools,sort:onlyRecent?'recent':sortBy}),[active,query,favorites,onlyFav,onlyRecent,recentTools,sortBy])
+  const toggleFav=(id)=>setFavorites(old=>{const next=old.includes(id)?old.filter(x=>x!==id):[...old,id];try{localStorage.setItem('tools-slate-favorites',JSON.stringify(next))}catch{}return next})
+  const openTool=(tool)=>{
+    const next=pushRecentTool(recentTools,tool.id)
+    setRecentTools(next)
+    try{localStorage.setItem('tools-slate-recent',JSON.stringify(next))}catch{}
+    setSelected(tool)
+  }
   const tabs=[['All',Grid2X2],['Downloader',DownloadCloud],['Maker',WandSparkles],['Tools',Wrench]]
   return <div className={`app-shell ${dark?'theme-dark':'theme-light'} nexus-theme`}>
     <header className={`nexus-header ${musicPanelOpen?'music-panel-open':''}`}>
@@ -293,10 +293,13 @@ function App(){
     <main id="top" className="nexus-main">
       <section className="nexus-hero"><div className="hero-art">{heroVideo&&<video className="hero-video" autoPlay muted loop playsInline onError={e=>{e.currentTarget.style.display="none"}}><source src={heroVideo} type="video/mp4"/></video>}<div className="hero-art-glow"/><div className="hero-art-copy"><span>TOOLS SLATE</span><small>YOUR DIGITAL SPACE</small></div></div></section>
       <section className="visitor-panel"><div className="visitor-avatar"><UserRound/></div><div className="visitor-data"><div><Globe2/> <span>NEGARA</span> <b title="Perkiraan otomatis dari zona waktu dan bahasa perangkat">{visitorDetails.country}</b><Smartphone/> <span>DEVICE</span> <b>{visitorDetails.device}</b></div><div><Globe2/> <span>BROWSER</span> <b>{visitorDetails.browser}</b>{batteryInfo.charging?<BatteryCharging/>:<Battery/>} <span>BATERAI</span> <b className="battery-value" role="status" aria-live="polite" title={batteryInfo.supported===false?'Informasi baterai tidak didukung browser ini':batteryInfo.charging?'Sedang mengisi daya':'Level baterai perangkat'}>{batteryInfo.supported===false?'N/A':batteryInfo.level===null?'--':`${batteryInfo.level}%${batteryInfo.charging?' · Mengisi':''}`}</b></div><div className="visitor-tags"><span className="visitor-chip"><Activity/> Tools aktif</span><span className="visitor-chip role-chip">Member</span></div></div></section>
-      <section className="tools-section nexus-tools" id="tools"><div className="nexus-toolbar"><div className="category-row">{tabs.map(([name,Icon])=><button key={name} className={`category-pill ${active===name?'active':''}`} onClick={()=>{setActive(name);setOnlyFav(false)}}><Icon size={17}/>{name}</button>)}</div></div>
-        <div className="section-heading nexus-section-heading"><div><h2><Grid2X2/> {active==='All'?'Semua Tools':active}</h2><p>Temukan tools yang kamu butuhkan.</p></div><span className="result-count">{filtered.length} TOOLS</span></div>
-        <div className="search-wrap nexus-search"><Search size={18}/><input ref={searchRef} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari tools..." aria-label="Cari tools"/></div>
-        {filtered.length?<div className="tool-grid">{filtered.map((t,index)=><ToolCard key={t.id} index={index} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
+      <section className="tools-section nexus-tools" id="tools"><div className="nexus-toolbar"><div className="category-row">{tabs.map(([name,Icon])=><button key={name} type="button" aria-pressed={active===name} className={`category-pill ${active===name?'active':''}`} onClick={()=>{setActive(name);setOnlyFav(false);setOnlyRecent(false)}}><Icon size={17}/>{name}</button>)}</div></div>
+        <div className="section-heading nexus-section-heading"><div><h2><Grid2X2/> {onlyFav?'Favorit':onlyRecent?'Terakhir dipakai':active==='All'?'Semua Tools':active}</h2><p>Temukan tools yang kamu butuhkan.</p></div><span className="result-count" aria-live="polite">{filtered.length} TOOLS</span></div>
+        <div className="tool-discovery-controls">
+          <div className="search-wrap nexus-search"><Search size={18}/><input ref={searchRef} value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cari tools..." aria-label="Cari tools" aria-keyshortcuts="Control+K Meta+K"/><kbd aria-hidden="true">Ctrl K</kbd>{query&&<button type="button" className="search-clear" onClick={()=>setQuery('')} aria-label="Hapus pencarian"><X size={16}/></button>}</div>
+          <div className="tool-filter-actions"><button type="button" className={`tool-quick-filter ${onlyFav?'active':''}`} aria-pressed={onlyFav} onClick={()=>{setOnlyFav(value=>!value);setOnlyRecent(false);setActive('All')}}><Star size={15} fill={onlyFav?'currentColor':'none'}/> Favorit <span>{favorites.length}</span></button><button type="button" className={`tool-quick-filter ${onlyRecent?'active':''}`} aria-pressed={onlyRecent} onClick={()=>{setOnlyRecent(value=>!value);setOnlyFav(false);setActive('All')}}><Clock3 size={15}/> Terakhir <span>{recentTools.length}</span></button><label className="tool-sort-control"><span>Urutkan</span><select aria-label="Urutkan tools" value={sortBy} onChange={event=>setSortBy(event.target.value)}><option value="default">Default</option><option value="popular">Populer</option><option value="name">Nama A–Z</option><option value="favorites">Favorit dulu</option></select></label></div>
+        </div>
+        {filtered.length?<div className="tool-grid">{filtered.map((t,index)=><ToolCard key={t.id} index={index} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>openTool(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>{onlyFav?'Belum ada tools favorit':onlyRecent?'Belum ada tools yang dibuka':'Tools tidak ditemukan'}</h3><p>{onlyFav?'Tandai tools dengan ikon bintang agar muncul di sini.':onlyRecent?'Tools yang kamu buka akan muncul di sini.':'Coba kata kunci atau filter lain.'}</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false);setOnlyRecent(false);setSortBy('default')}}>Reset filter</button></div>}
       </section>
     </main>
     {portalRoot&&!selected&&!infoPage&&!menuOpen&&!slateOpen&&createPortal(<button className="slate-fab" onClick={()=>setSlateOpen(true)} aria-label="Buka Slate" aria-expanded={slateOpen}><img className="slate-mascot-image" src="/media/slate-mascot.png" alt="" aria-hidden="true" draggable="false" onError={event=>event.currentTarget.closest('.slate-fab')?.classList.add('slate-fab-image-missing')}/></button>,portalRoot)}
@@ -340,7 +343,7 @@ function InfoPage({page,onClose}){
  </section></div>
 }
 
-function ToolCard({tool,onClick,favorite,onFavorite,index=0}){const Icon=tool.icon;const trackPointer=e=>{if(e.pointerType==='touch')return;const bounds=e.currentTarget.getBoundingClientRect();e.currentTarget.style.setProperty('--mx',`${e.clientX-bounds.left}px`);e.currentTarget.style.setProperty('--my',`${e.clientY-bounds.top}px`)};return <article className={`tool-card ${tool.comingSoon?'coming-soon':''}`} style={{'--card-index':index}} onPointerMove={trackPointer} onClick={()=>!tool.comingSoon&&onClick()} onKeyDown={e=>e.key==='Enter'&&!tool.comingSoon&&onClick()} tabIndex={tool.comingSoon?-1:0} role="button"><div className="card-top"><span className="tool-icon"><Icon size={20}/></span><div className="card-badges">{tool.tag&&<span className={`tag ${tool.tag==='API'?'api':''}`}>{tool.tag}</span>}<button className={`fav-btn ${favorite?'saved':''}`} onClick={e=>{e.stopPropagation();onFavorite()}} aria-label="Toggle favorite"><Star size={15} fill={favorite?'currentColor':'none'}/></button></div></div><h3>{tool.name}</h3><p>{tool.desc}</p><span className="card-open">{tool.comingSoon?'Coming soon':'Open tool'} {!tool.comingSoon&&<ArrowUpRight size={15}/>}</span></article>}
+function ToolCard({tool,onClick,favorite,onFavorite,index=0}){const Icon=tool.icon;const trackPointer=e=>{if(e.pointerType==='touch')return;const bounds=e.currentTarget.getBoundingClientRect();e.currentTarget.style.setProperty('--mx',`${e.clientX-bounds.left}px`);e.currentTarget.style.setProperty('--my',`${e.clientY-bounds.top}px`)};return <article className={`tool-card ${tool.comingSoon?'coming-soon':''}`} style={{'--card-index':index}} onPointerMove={trackPointer} onClick={()=>!tool.comingSoon&&onClick()}><div className="card-top"><span className="tool-icon"><Icon size={20}/></span><div className="card-badges">{tool.tag&&<span className={`tag ${tool.tag==='API'?'api':''}`}>{tool.tag}</span>}<button type="button" className={`fav-btn ${favorite?'saved':''}`} onClick={e=>{e.stopPropagation();onFavorite()}} aria-label={`${favorite?'Hapus dari':'Tambahkan ke'} favorit: ${tool.name}`} aria-pressed={favorite}><Star size={15} fill={favorite?'currentColor':'none'}/></button></div></div><h3>{tool.name}</h3><p>{tool.desc}</p>{tool.comingSoon?<span className="card-open">Coming soon</span>:<button type="button" className="card-open" aria-label={`Buka ${tool.name}`}>{'Open tool'} <ArrowUpRight size={15}/></button>}</article>}
 
 function ToolModal({tool,onClose}){
  const [value,setValue]=useState(''),[output,setOutput]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),[extra,setExtra]=useState(''),[extra2,setExtra2]=useState(''),[result,setResult]=useState(null)
@@ -372,12 +375,18 @@ function ToolModal({tool,onClose}){
  default:throw Error('Tool belum tersedia.')}
  if(out)setOutput(out)
  }catch(e){setError(e.message||'Terjadi kesalahan.')}finally{setBusy(false)}}
- const copy=()=>navigator.clipboard?.writeText(output).then(()=>setError('Hasil disalin ke clipboard.')).catch(()=>setError('Clipboard tidak tersedia.'))
+ const copy=async()=>{if(!output)return;try{await navigator.clipboard.writeText(output);setError('Hasil disalin ke clipboard.')}catch{setError('Clipboard tidak tersedia di browser ini.')}}
  const download=()=>{const a=document.createElement('a'),url=URL.createObjectURL(new Blob([output],{type:'text/plain;charset=utf-8'}));a.href=url;a.download=`tools-slate-${tool.id}-result.txt`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+ const loadSample=()=>{
+  const samples={json:['{"name":"Slate","tools":["JSON","Base64"]}','pretty'],base64:['Halo, Slate!','encode'],url:['https://tools-slate.vercel.app/?q=halo dunia','encode'],hash:['Slate tools'],uuid:['','3'],html:['<h1>Halo & selamat datang</h1>','encode'],text:['Tools Slate bikin kerja lebih mudah.','title'],words:['Tools Slate bikin kerja lebih mudah.'],timestamp:['1735689600','to'],unit:['42','km-mi'],percentage:['100','', '15'],color:['#79D9FF'],regex:['\\d+','Versi 2.1 dan 3 tools','g'],markdown:['# Halo\nTools **Slate**.'],qr:['https://tools-slate.vercel.app'],weather:['Surabaya'],currency:['100','USD','IDR'],ip:['8.8.8.8'],dns:['example.com','A'],urlscan:['https://example.org'],ssl:['example.com']}
+  const sample=samples[tool.id]
+  if(!sample)return
+  setValue(sample[0]??'');setExtra(sample[1]??'');setExtra2(sample[2]??'');setOutput('');setResult(null);setError('')
+ }
  const placeholders={json:'Tempel JSON di sini...',base64:'Masukkan teks atau Base64...',url:'Masukkan URL atau teks...',hash:'Masukkan teks untuk di-hash...',uuid:'Jumlah UUID (default 1)',regex:'Regular expression, contoh: \\w+',html:'Masukkan HTML atau teks...',text:'Ketik atau tempel teks...',words:'Tempel teks untuk dihitung...',timestamp:'Masukkan timestamp atau tanggal ISO...',unit:'Masukkan angka...',percentage:'Angka pertama...',color:'#6750A4',markdown:'## Halo!\nTulis **Markdown** di sini...',qr:'Masukkan teks atau URL...',weather:'Masukkan nama kota, contoh: Surabaya',currency:'Masukkan jumlah...',ip:'Kosongkan untuk IP publik kamu, atau masukkan IP...',dns:'Masukkan domain, contoh: example.org',jwt:'Tempel JWT di sini...',breach:'Masukkan password yang ingin diperiksa...',urlscan:'Masukkan URL, contoh: https://example.org',ssl:'Masukkan domain, contoh: example.org'}
  const isTextArea=!['uuid','timestamp','unit','percentage','color','weather','currency','ip','dns','ssl','breach'].includes(tool.id)
- return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal" role="dialog" aria-modal="true" aria-labelledby="tool-dialog-title"><div className="modal-head"><div className="modal-title"><span className="tool-icon"><Icon size={20}/></span><div><h2 id="tool-dialog-title">{tool.name}</h2><p>{tool.desc}</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Close"><X/></button></div>
- <div className="modal-body">{isTextArea?<textarea className="work-area" value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholders[tool.id]}/>:<input className="single-input" value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholders[tool.id]} type={tool.id==='breach'?'password':'text'} autoComplete="off"/>}
+ return <div className="modal-backdrop" onMouseDown={e=>e.target===e.currentTarget&&onClose()}><section className="tool-modal" role="dialog" aria-modal="true" aria-labelledby="tool-dialog-title"><div className="modal-head"><div className="modal-title"><span className="tool-icon"><Icon size={20}/></span><div><h2 id="tool-dialog-title">{tool.name}</h2><p>{tool.desc}</p></div></div><button className="icon-btn" onClick={onClose} aria-label="Tutup"><X/></button></div>
+ <div className="modal-body">{isTextArea?<textarea className="work-area" aria-label={`Input ${tool.name}`} value={value} onChange={e=>setValue(e.target.value)} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();run()}}} placeholder={placeholders[tool.id]}/>:<input className="single-input" aria-label={`Input ${tool.name}`} value={value} onChange={e=>setValue(e.target.value)} onKeyDown={e=>e.key==='Enter'&&!busy&&run()} placeholder={placeholders[tool.id]} type={tool.id==='breach'?'password':'text'} autoComplete="off"/>}
  {['json','base64','url','html','timestamp','unit','text','dns'].includes(tool.id)&&<div className="option-row"><label>{tool.id==='json'?'Output':tool.id==='timestamp'?'Convert':tool.id==='unit'?'Conversion':tool.id==='text'?'Text format':tool.id==='dns'?'DNS record':'Mode'}</label><CustomSelect ariaLabel={tool.id==='json'?'Output':tool.id==='timestamp'?'Convert':tool.id==='unit'?'Conversion':tool.id==='text'?'Text format':tool.id==='dns'?'DNS record':'Mode'} value={extra} onChange={e=>setExtra(e.target.value)} options={(tool.id==='json'?[['pretty','Pretty print'],['minify','Minify']]:tool.id==='timestamp'?[['to','Timestamp to date'],['from','Date to timestamp']]:tool.id==='unit'?[['km-mi','Kilometer → Mile'],['mi-km','Mile → Kilometer'],['kg-lb','Kilogram → Pound'],['lb-kg','Pound → Kilogram'],['c-f','Celsius → Fahrenheit'],['f-c','Fahrenheit → Celsius']]:tool.id==='text'?[['upper','UPPERCASE'],['lower','lowercase'],['title','Title Case'],['sentence','Sentence case'],['reverse','Reverse text'],['slug','URL slug']]:tool.id==='dns'?[['A','A'],['AAAA','AAAA'],['MX','MX'],['TXT','TXT'],['NS','NS'],['CNAME','CNAME'],['CAA','CAA'],['SOA','SOA']]:[['encode','Encode'],['decode','Decode']]).map(([value,label])=>({value,label}))}/></div>}
  {tool.id==='uuid'&&<OptionInput label="Jumlah UUID" value={extra} setValue={setExtra} placeholder="1"/>}
  {tool.id==='percentage'&&<OptionInput label="Angka kedua" value={extra2} setValue={setExtra2} placeholder="Masukkan angka kedua"/>}
@@ -386,9 +395,9 @@ function ToolModal({tool,onClose}){
  {tool.id==='color'&&<div className="color-preview" style={{background:/^#?[0-9a-f]{3}([0-9a-f]{3})?$/i.test(value)?(value.startsWith('#')?value:`#${value}`):'#64748b'}}/>}
 
 
- <button className="run-btn" onClick={run} disabled={busy}>{busy?<RefreshCw className="spin" size={17}/>:<Zap size={17}/>} {busy?'Processing...':'Run tool'}</button>
- {error&&<div className={`notice ${error.includes('disalin')?'success':''}`}>{error}</div>}
- {output&&<div className="output-wrap"><div className="output-head"><span>OUTPUT</span><div><button onClick={copy}><Copy size={14}/> Copy</button><button onClick={download}><Download size={14}/> Save</button></div></div><pre>{output}</pre></div>}
+ <div className="tool-run-actions">{samples[tool.id]&&<button type="button" className="tool-sample-btn" onClick={loadSample} disabled={busy}>Muat contoh</button>}<button className="run-btn" onClick={run} disabled={busy} aria-busy={busy}>{busy?<RefreshCw className="spin" size={17}/>:<Zap size={17}/>} {busy?'Memproses…':'Jalankan tool'}</button></div>
+ {error&&<div className={`notice ${error.includes('disalin')?'success':''}`} role="status" aria-live="polite">{error}</div>}
+ {output&&<div className="output-wrap"><div className="output-head"><span>HASIL</span><div><button type="button" onClick={copy}><Copy size={14}/> Salin</button><button type="button" onClick={download}><Download size={14}/> Simpan</button></div></div><pre aria-live="polite">{output}</pre></div>}
  {result?.qr&&<div className="qr-result"><img src={result.qr} alt="Generated QR code"/><a href={result.qr} download="tools-slate-qr.png" target="_blank" rel="noreferrer"><Download size={15}/> Open / save QR</a></div>}
  {result?.color&&<div className="output-wrap"><div className="output-head"><span>COLOR VALUES</span><button onClick={copy}><Copy size={14}/> Copy</button></div><pre>{output}</pre></div>}
  {tool.id==='markdown'&&<div className="markdown-preview"><div className="output-head"><span>LIVE PREVIEW</span></div><div dangerouslySetInnerHTML={{__html:markdownLite(value)}}/></div>}
@@ -487,7 +496,7 @@ function LyricsSearchModal({onClose}){
   </div></section></div>
 }
 
-function OptionInput({label,value,setValue,placeholder}){return <div className="option-row"><label>{label}</label><input value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholder}/></div>}
+function OptionInput({label,value,setValue,placeholder}){const id=`option-${label.toLowerCase().replace(/[^a-z0-9]+/g,'-')}`;return <div className="option-row"><label htmlFor={id}>{label}</label><input id={id} value={value} onChange={e=>setValue(e.target.value)} placeholder={placeholder}/></div>}
 async function fetchJson(url){const r=await fetch(url,{signal:AbortSignal.timeout(15000),headers:{Accept:'application/json'}});if(!r.ok)throw Error(`Layanan merespons (${r.status}). Periksa input atau coba lagi.`);const type=(r.headers.get('content-type')||'').toLowerCase();if(type&&!type.includes('json'))throw Error('Layanan mengirim respons yang tidak dikenali. Coba lagi nanti.');return r.json()}
 async function digestHex(algo,value){const bytes=new TextEncoder().encode(value),hash=await crypto.subtle.digest(algo,bytes);return [...new Uint8Array(hash)].map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase()}
 function encodeUtf8(s){const bytes=new TextEncoder().encode(s);let bin='';bytes.forEach(b=>bin+=String.fromCharCode(b));return btoa(bin)}
