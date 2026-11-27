@@ -26,7 +26,6 @@ import { musicAlbums } from './music-library.js'
 import { CustomSelect } from './custom-select.jsx'
 import './style.css'
 import { heroVideo } from './media.js'
-import SlateMascot from './slate-mascot.jsx'
 
 const tools = [
   { id:'json', name:'JSON Studio', desc:'Format, validasi JSON Schema, diff, dan jalankan JSONPath.', category:'Developer', icon:Braces, tag:'Popular' },
@@ -300,7 +299,7 @@ function App(){
         {filtered.length?<div className="tool-grid">{filtered.map((t,index)=><ToolCard key={t.id} index={index} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
     </main>
-    {portalRoot&&!selected&&!infoPage&&!menuOpen&&!slateOpen&&createPortal(<button className="slate-fab" onClick={()=>setSlateOpen(true)} aria-label="Buka Slate" aria-expanded={slateOpen}><span className="slate-mascot-wrap"><SlateMascot/></span><span className="slate-fab-label">Slate</span></button>,portalRoot)}
+    {portalRoot&&!selected&&!infoPage&&!menuOpen&&!slateOpen&&createPortal(<button className="slate-fab" onClick={()=>setSlateOpen(true)} aria-label="Buka Slate" aria-expanded={slateOpen}><span className="slate-mascot-wrap"><video className="slate-mascot-video" autoPlay muted loop playsInline preload="metadata" aria-hidden="true" onError={event=>event.currentTarget.closest('.slate-fab')?.classList.add('slate-fab-video-missing')}><source src="/media/slate-mascot.mp4" type="video/mp4"/></video></span><span className="slate-fab-label">Slate</span></button>,portalRoot)}
     {portalRoot&&slateOpen&&createPortal(<React.Suspense fallback={<div className="ai-widget-loading" role="status">Membuka Slate…</div>}><AISlateModal onClose={()=>setSlateOpen(false)}/></React.Suspense>,portalRoot)}
     {selected&&<React.Suspense fallback={<div className="modal-backdrop advanced-backdrop"><div className="advanced-loading" role="status"><span className="spin">◌</span> Memuat tool…</div></div>}>
       {(selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>
