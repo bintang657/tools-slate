@@ -96,7 +96,7 @@ test('converts exhausted free-tier quota into a safe user-facing error', async (
     const response = mockResponse()
     await handler(mockRequest({ mode: 'general', messages: [{ role: 'user', content: 'Halo' }] }), response)
     assert.equal(response.statusCode, 429)
-    assert.match(response.jsonBody.error, /Kuota gratis Gemini sedang habis/)
+    assert.match(response.jsonBody.error, /Kuota gratis Slate sedang habis/)
     assert.doesNotMatch(JSON.stringify(response.jsonBody), /provider internal detail|server-only-test-key/)
   } finally {
     globalThis.fetch = previousFetch

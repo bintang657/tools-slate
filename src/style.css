@@ -1608,8 +1608,8 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 .ai-followups button:hover { border-color: rgba(106,210,240,.5); background: rgba(39,120,148,.22); }
 .ai-editing-notice { display: flex; justify-content: space-between; align-items: center; margin: 0 0 7px; color: #94cfe1; font-size: 12px; }
 .ai-editing-notice button,.ai-transient-error button { display: inline-flex; align-items: center; justify-content: center; gap: 5px; min-height: 34px; padding: 6px 10px; border: 1px solid rgba(130,189,217,.2); border-radius: 9px; background: rgba(36,89,110,.22); color: #d0eff9; font-size: 11px; }
-.ai-transient-error > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; padding: 6px 9px; border: 1px solid rgba(255,120,120,.2); border-radius: 9px; background: rgba(164,46,55,.12); }
-.ai-transient-error span { color: #ffb4ad; font-size: 11px; line-height: 1.4; }
+.ai-transient-error > div { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; padding: 8px 10px; border: 1px solid rgba(134,213,243,.34); border-radius: 10px; background: linear-gradient(130deg, rgba(25,58,81,.82), rgba(13,35,55,.9)); }
+.ai-transient-error span { color: #d3ebf5; font-size: 12px; line-height: 1.45; }
 .ai-export-chat { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; border: 1px solid rgba(130,189,217,.18); border-radius: 10px; background: rgba(255,255,255,.03); color: #a3c9db; }
 .ai-export-chat:disabled { opacity: .4; }
 .ai-attachment-preview,.ai-message-attachments { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px; }
@@ -1715,3 +1715,12 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
   .ai-widget-loading { right: 12px; bottom: 82px; }
 }
 @media(prefers-reduced-motion:reduce) { .slate-fab { transition: none; } }
+
+/* Slate menu colors */
+.info-panel { border-color: rgba(134,213,243,.35); }
+.info-panel .info-card { border-color: rgba(134,213,243,.3); background: linear-gradient(125deg, rgba(24,51,73,.96), rgba(12,31,49,.98)); }
+.info-panel .info-card:hover { border-color: rgba(135,224,255,.72); background: linear-gradient(125deg, rgba(31,69,96,.98), rgba(15,42,65,.98)); }
+.info-panel .info-card b { color: #edf9ff; }
+.info-panel .info-card small { color: #b5cad8; }
+.info-panel .info-card > svg { color: #a9e6ff; }
+.info-panel .info-icon { border-color: rgba(135,205,235,.32); background: linear-gradient(145deg, #1a3b55, #10253a); color: #c4edff; }
