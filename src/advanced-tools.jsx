@@ -84,7 +84,6 @@ export function ApiWorkbenchModal({ onClose }) {
       <Field label="Headers" hint="JSON object"><textarea className="advanced-code" value={headers} onChange={event => setHeaders(event.target.value)} spellCheck="false"/></Field>
       <Field label="Request body" hint="Untuk POST / PUT / PATCH"><textarea className="advanced-code" value={body} onChange={event => setBody(event.target.value)} spellCheck="false" disabled={method === 'GET' || method === 'HEAD'}/></Field>
     </div>
-    <Notice>Request dikirim dari browser. Endpoint harus mengizinkan CORS; jangan masukkan secret/API key sensitif ke halaman publik.</Notice>
     <button className="run-btn advanced-run" type="button" onClick={send} disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <Play size={17}/>} {busy ? 'Mengirim request…' : `Kirim ${method}`}</button>
     {error && <Notice tone="error">{error}</Notice>}
     {result && <div className="advanced-result"><div className="advanced-result-head"><div><b className={result.status < 400 ? 'result-ok' : 'result-bad'}>{result.status} {result.statusText}</b><small>{result.time} ms · {result.type}{result.truncated ? ' · respons dipotong' : ''}</small></div><CopyButton value={result.text}/></div><pre className="advanced-output">{result.text || '(respons kosong)'}</pre></div>}
@@ -288,7 +287,7 @@ export function PdfToolkitModal({ onClose }) {
           source.setTitle(''); source.setAuthor(''); source.setSubject(''); source.setKeywords([]); source.setCreator('Tools Slate'); source.setProducer('Tools Slate')
           const bytes = await source.save({ useObjectStreams: true })
           saveBlob(new Blob([bytes], { type: 'application/pdf' }), 'pdf-dioptimalkan.pdf')
-          setMessage('PDF ditulis ulang dengan object streams dan metadata dokumen dibersihkan. Ukuran hasil dapat berbeda dari file awal.')
+          setMessage('PDF berhasil dioptimalkan.')
         } else {
           const groups = mode === 'split' ? parsePageRanges(range, source.getPageCount()) : [parsePageRanges(range, source.getPageCount()).flat()]
           const { default: JSZip } = await import('jszip')
@@ -310,13 +309,12 @@ export function PdfToolkitModal({ onClose }) {
     } catch (error) { setError(error.message?.includes('encrypted') ? 'PDF terenkripsi/password-protected belum didukung.' : error.message || 'Gagal memproses PDF.') }
     finally { setBusy(false) }
   }
-  return <ModalShell title="PDF Toolkit" subtitle="Gabungkan, pisahkan, susun, dan optimalkan PDF lokal" icon={FileText} onClose={onClose}>
+  return <ModalShell title="PDF Toolkit" subtitle="Gabungkan, pisahkan, susun, dan optimalkan PDF" icon={FileText} onClose={onClose}>
     <Tabs value={mode} onChange={next => {setMode(next);setError('');setMessage('')}} items={[{id:'merge',label:'Gabung'},{id:'split',label:'Pisah'},{id:'extract',label:'Susun / ekstrak'},{id:'compress',label:'Kompres'},{id:'optimize',label:'Optimasi'}]}/>
-    <Field label={mode === 'merge' ? 'Pilih beberapa PDF' : 'Pilih PDF'} hint="Diproses lokal · maksimal 60 MB per file"><input className="advanced-file-input" type="file" accept="application/pdf,.pdf" multiple={mode === 'merge'} onChange={pick}/></Field>
+    <Field label={mode === 'merge' ? 'Pilih beberapa PDF' : 'Pilih PDF'} hint="Maksimal 60 MB per file"><input className="advanced-file-input" type="file" accept="application/pdf,.pdf" multiple={mode === 'merge'} onChange={pick}/></Field>
     {files.length > 0 && <div className="advanced-file-list">{files.map((file, index) => <div key={`${file.name}-${index}`}><FileText size={15}/><span>{file.name}<small>{formatBytes(file.size)}</small></span><button className="advanced-quiet-btn" onClick={() => setFiles(files.filter((_, i) => i !== index))} aria-label={`Hapus ${file.name}`}><Trash2 size={14}/></button></div>)}</div>}
     {(mode === 'split' || mode === 'extract') && <Field label={mode === 'split' ? 'Kelompok halaman' : 'Urutan halaman'} hint={mode === 'split' ? 'Titik koma memisahkan file hasil; koma mengurutkan halaman.' : 'Contoh 3,1,2 untuk menyusun ulang'}><input className="advanced-input" value={range} onChange={event => setRange(event.target.value)} placeholder={mode === 'split' ? '1-3;4-6' : '3,1,2'}/></Field>}
     {mode === 'compress' && <div className="advanced-two-col"><Field label={`Kualitas JPEG ${compressQuality}%`}><input className="advanced-range" type="range" min="45" max="92" value={compressQuality} onChange={event => setCompressQuality(Number(event.target.value))}/></Field><Field label="Resolusi raster"><select className="advanced-select" value={compressScale} onChange={event => setCompressScale(event.target.value)}><option value="0.75">Rendah — file lebih kecil</option><option value="1">Standar</option><option value="1.25">Tinggi — detail lebih baik</option></select></Field></div>}
-    {mode === 'compress' ? <Notice>Mode kompres meraster halaman dan mengompresi sebagai JPEG. Teks tidak lagi dapat dipilih, dan hasil file bisa lebih besar untuk PDF yang dominan teks. File tetap lokal.</Notice> : <Notice>File tidak diunggah. Optimasi membersihkan metadata dan menulis ulang struktur file; ukuran hasil dapat berbeda dari file awal.</Notice>}
     {error && <Notice tone="error">{error}</Notice>}{message && <Notice>{message}</Notice>}
     {busy && <div className="media-progress" role="progressbar" aria-valuenow={progress} aria-valuemin="0" aria-valuemax="100"><span style={{width:`${progress}%`}}/></div>}
     <button className="run-btn advanced-run" onClick={process} disabled={busy || !files.length}>{busy ? <LoaderCircle className="spin" size={17}/> : <Download size={16}/>} {busy ? 'Memproses PDF…' : 'Proses PDF'}</button>
@@ -368,7 +366,6 @@ export function ImagePrivacyModal({ onClose }) {
     {file && <div className="advanced-image-preview"><img src={preview} alt="Pratinjau gambar asli"/><div><b>{file.name}</b><small>{file.type || 'image'} · {formatBytes(file.size)}</small></div></div>}
     <div className="advanced-two-col"><Field label="Format output"><select className="advanced-select" value={format} onChange={event => setFormat(event.target.value)}><option value="image/webp">WebP — ukuran efisien</option><option value="image/jpeg">JPEG</option><option value="image/png">PNG</option></select></Field><Field label="Lebar maksimal (px)"><input className="advanced-input" type="number" min="128" max="12000" value={maxWidth} onChange={event => setMaxWidth(Math.max(128, Math.min(12000, Number(event.target.value) || 128)))}/></Field></div>
     {format !== 'image/png' && <Field label={`Kualitas ${quality}%`}><input className="advanced-range" type="range" min="25" max="100" value={quality} onChange={event => setQuality(Number(event.target.value))}/></Field>}
-    <Notice>Gambar diproses lokal dengan Canvas. Ekspor ulang menghapus metadata EXIF/GPS dari file hasil; file asli tidak diubah.</Notice>
     {error && <Notice tone="error">{error}</Notice>}
     {file && <button className="run-btn advanced-run" onClick={process} disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <RefreshCw size={16}/>} {busy ? 'Memproses…' : 'Proses gambar'}</button>}
     {result && <div className="advanced-result"><div className="advanced-result-head"><div><b>Hasil siap</b><small>{result.width} × {result.height} px · {formatBytes(result.blob.size)} (asli {formatBytes(file.size)})</small></div><a className="advanced-download" href={result.url} download={`tools-slate-image.${ext}`}><Download size={15}/> Unduh</a></div><img className="advanced-image-output" src={result.url} alt="Hasil gambar yang sudah dibersihkan"/></div>}
@@ -415,12 +412,10 @@ export function OcrWorkbenchModal({ onClose }) {
     <Field label="Pilih gambar" hint="JPG, PNG, WebP · maksimal 15 MB"><input className="advanced-file-input" type="file" accept="image/*" onChange={event => {choose(event.target.files?.[0]); event.target.value = ''}}/></Field>
     {file && <div className="advanced-image-preview"><img src={preview} alt="Gambar untuk OCR"/><div><b>{file.name}</b><small>{formatBytes(file.size)}</small></div></div>}
     <Field label="Bahasa teks"><select className="advanced-select" value={language} onChange={event => setLanguage(event.target.value)} disabled={busy}><option value="eng+ind">Inggris + Indonesia</option><option value="ind">Indonesia</option><option value="eng">Inggris</option></select></Field>
-    <Notice>Gambar diproses di browser. Model OCR dan data bahasa diunduh saat pertama kali digunakan; perlu koneksi internet.</Notice>
     {error && <Notice tone="error">{error}</Notice>}
     {file && <button className="run-btn advanced-run" onClick={recognize} disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <FileSearch size={16}/>} {busy ? `${status || 'Memuat OCR'}… ${progress}%` : 'Ekstrak teks'}</button>}
     {busy && <div className="media-progress" role="progressbar" aria-valuenow={progress} aria-valuemin="0" aria-valuemax="100"><span style={{width:`${progress}%`}}/></div>}
     {text && <div className="advanced-result"><div className="advanced-result-head"><div><b>Teks terdeteksi</b><small>{text.trim().split(/\s+/).filter(Boolean).length} kata</small></div><CopyButton value={text}/></div><textarea className="advanced-code ocr-output" value={text} onChange={event => setText(event.target.value)}/></div>}
-    {!text && status === 'Selesai' && <Notice>Tidak ada teks yang dapat dikenali pada gambar.</Notice>}
   </ModalShell>
 }
 
@@ -474,12 +469,11 @@ export function DomainSecurityModal({ onClose }) {
     ['CAA', report.caa.length ? 'Ditemukan' : 'Tidak ada record CAA', report.caa.map(item => item.data).join('\n')],
     ['MX', report.mx.length ? 'Ditemukan' : 'Tidak ada record MX', report.mx.map(item => item.data).join('\n')],
     ['DNSSEC', report.dnssec ? 'DNS-over-HTTPS menandai AD' : 'AD tidak terdeteksi', 'Indikator validasi dari resolver publik'],
-    ['Sertifikat publik', report.certs ? `${report.certs.length} entri CT` : 'CT tidak tersedia di deployment ini', 'Catatan transparansi bukan pemeriksaan masa berlaku TLS'],
+    ['Sertifikat publik', report.certs ? `${report.certs.length} entri CT` : 'CT tidak tersedia di deployment ini', ''],
   ] : []
-  return <ModalShell title="Domain Security Checker" subtitle="Audit DNS, email authentication, dan sertifikat publik" icon={ShieldCheck} onClose={onClose}>
+  return <ModalShell title="Domain Security Checker" subtitle="Periksa DNS, email authentication, dan sertifikat publik" icon={ShieldCheck} onClose={onClose}>
     <Field label="Domain"><input className="advanced-input" value={domain} onChange={event => setDomain(event.target.value)} placeholder="example.com" onKeyDown={event => event.key === 'Enter' && !busy && check()}/></Field>
     <Field label="Selector DKIM" hint="Selector tidak dapat ditemukan otomatis; isi sesuai konfigurasi domain"><input className="advanced-input" value={selector} onChange={event => setSelector(event.target.value)} placeholder="default"/></Field>
-    <Notice>Memeriksa DNS melalui resolver publik Google dan sertifikat melalui CT. Hasil ini informatif, bukan audit keamanan menyeluruh.</Notice>
     {error && <Notice tone="error">{error}</Notice>}
     <button className="run-btn advanced-run" onClick={check} disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <ShieldCheck size={16}/>} {busy ? 'Memeriksa DNS…' : 'Jalankan pemeriksaan'}</button>
     {report && <div className="domain-report"><div className="domain-report-title"><b>{report.host}</b><small>Diperiksa {report.checkedAt}</small></div>{rows.map(([name, status, detail]) => <div className="domain-check-row" key={name}><span className={status.includes('Ditemukan') || status.includes('entri') || status.includes('menandai') ? 'check-positive' : 'check-neutral'}>{status.includes('Ditemukan') || status.includes('entri') || status.includes('menandai') ? <CheckCircle2 size={16}/> : <AlertTriangle size={16}/>}</span><div><b>{name}</b><small>{status}</small>{detail && <code>{detail}</code>}</div></div>)}</div>}
@@ -512,7 +506,7 @@ export function RegexWorkbenchModal({ onClose }) {
     <Field label="Teks uji" hint="Maksimal 12.000 karakter"><textarea className="advanced-code json-editor" value={text} onChange={event => setText(event.target.value)} maxLength={12000}/></Field>
     {error && <Notice tone="error">{error}</Notice>}
     <button className="run-btn advanced-run" onClick={test} disabled={busy}>{busy ? <LoaderCircle className="spin" size={17}/> : <Play size={16}/>} {busy ? 'Menguji…' : 'Jalankan regex'}</button>
-    <div className="advanced-result"><div className="advanced-result-head"><div><b>{matches.length} hasil</b><small>maksimal 100 match</small></div></div>{matches.length ? <div className="regex-match-list">{matches.map((item, index) => <div key={`${item.index}-${index}`}><span>{index + 1}</span><code>{item.match || '(empty match)'}</code><small>@ {item.index} · grup: {JSON.stringify(item.groups)} · captures: {JSON.stringify(item.captures)}</small></div>)}</div> : <p className="advanced-empty">Masukkan pola lalu jalankan untuk melihat hasil.</p>}</div>
+    {matches.length > 0 && <div className="advanced-result"><div className="advanced-result-head"><div><b>{matches.length} hasil</b></div></div><div className="regex-match-list">{matches.map((item, index) => <div key={`${item.index}-${index}`}><span>{index + 1}</span><code>{item.match || '(empty match)'}</code><small>@ {item.index} · grup: {JSON.stringify(item.groups)} · captures: {JSON.stringify(item.captures)}</small></div>)}</div></div>}
   </ModalShell>
 }
 
@@ -539,10 +533,10 @@ export function JwtWorkbenchModal({ onClose }) {
   }
   const exp = Number(parsed?.payload?.exp)
   const expired = Number.isFinite(exp) ? exp <= parsed?.now : null
-  return <ModalShell title="JWT Workbench" subtitle="Decode header/claims, waktu token, dan peringatan keamanan" icon={ShieldCheck} onClose={onClose}>
-    <Field label="Token JWT" hint="Diproses lokal di browser"><textarea className="advanced-code token-editor" value={token} onChange={event => {setToken(event.target.value);setParsed(null);setError('')}} placeholder="Tempel token JWT di sini…" spellCheck="false"/></Field>
+  return <ModalShell title="JWT Workbench" subtitle="Decode header dan claims token JWT" icon={ShieldCheck} onClose={onClose}>
+    <Field label="Token JWT"><textarea className="advanced-code token-editor" value={token} onChange={event => {setToken(event.target.value);setParsed(null);setError('')}} placeholder="Tempel token JWT di sini…" spellCheck="false"/></Field>
     {error && <Notice tone="error">{error}</Notice>}
     <button className="run-btn advanced-run" onClick={decode}><Play size={16}/> Decode token</button>
-    {parsed && <><div className="jwt-claims">{Number.isFinite(exp) && <div><b>Expiration</b><span className={expired ? 'claim-warn' : 'claim-good'}>{expired ? 'Kedaluwarsa' : 'Masih berlaku'} · {new Date(exp * 1000).toLocaleString('id-ID')}</span></div>}{Number.isFinite(Number(parsed.payload.iat)) && <div><b>Issued at</b><span>{new Date(Number(parsed.payload.iat) * 1000).toLocaleString('id-ID')}</span></div>}{parsed.payload.iss && <div><b>Issuer</b><span>{String(parsed.payload.iss)}</span></div>}{parsed.payload.aud && <div><b>Audience</b><span>{Array.isArray(parsed.payload.aud) ? parsed.payload.aud.join(', ') : String(parsed.payload.aud)}</span></div>}</div><div className="advanced-two-col"><div><div className="advanced-code-head"><b>Header</b><CopyButton value={JSON.stringify(parsed.header, null, 2)}/></div><pre className="advanced-output">{JSON.stringify(parsed.header, null, 2)}</pre></div><div><div className="advanced-code-head"><b>Payload</b><CopyButton value={JSON.stringify(parsed.payload, null, 2)}/></div><pre className="advanced-output">{JSON.stringify(parsed.payload, null, 2)}</pre></div></div><Notice tone="error">Decode bukan verifikasi tanda tangan. Jangan tempel token produksi/rahasia ke perangkat atau situs yang tidak dipercaya.</Notice></>}
+    {parsed && <><div className="jwt-claims">{Number.isFinite(exp) && <div><b>Expiration</b><span className={expired ? 'claim-warn' : 'claim-good'}>{expired ? 'Kedaluwarsa' : 'Masih berlaku'} · {new Date(exp * 1000).toLocaleString('id-ID')}</span></div>}{Number.isFinite(Number(parsed.payload.iat)) && <div><b>Issued at</b><span>{new Date(Number(parsed.payload.iat) * 1000).toLocaleString('id-ID')}</span></div>}{parsed.payload.iss && <div><b>Issuer</b><span>{String(parsed.payload.iss)}</span></div>}{parsed.payload.aud && <div><b>Audience</b><span>{Array.isArray(parsed.payload.aud) ? parsed.payload.aud.join(', ') : String(parsed.payload.aud)}</span></div>}</div><div className="advanced-two-col"><div><div className="advanced-code-head"><b>Header</b><CopyButton value={JSON.stringify(parsed.header, null, 2)}/></div><pre className="advanced-output">{JSON.stringify(parsed.header, null, 2)}</pre></div><div><div className="advanced-code-head"><b>Payload</b><CopyButton value={JSON.stringify(parsed.payload, null, 2)}/></div><pre className="advanced-output">{JSON.stringify(parsed.payload, null, 2)}</pre></div></div></>}
   </ModalShell>
 }
