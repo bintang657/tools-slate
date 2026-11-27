@@ -1,6 +1,6 @@
 // language: JSX, file: src/main.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createPortal, createRoot } from 'react-dom/client'
 import {
   Search, Menu, X, VolumeX, ArrowUpRight, Sparkles, Code2, Type, Hash, CloudSun,
   Coins, QrCode, Braces, Link2, Clock3, Palette, Calculator, Regex, FileText,
@@ -29,7 +29,6 @@ import { heroVideo } from './media.js'
 const tools = [
   { id:'json', name:'JSON Studio', desc:'Format, validasi JSON Schema, diff, dan jalankan JSONPath.', category:'Developer', icon:Braces, tag:'Popular' },
   { id:'apiworkbench', name:'API Request Builder', desc:'Kirim request HTTP dan inspeksi respons API.', category:'Developer', icon:Network, tag:'New' },
-  { id:'aislate', name:'AI Slate', desc:'Asisten AI untuk coding, menulis, belajar, dan ide.', category:'Online Tools', icon:Sparkles, tag:'AI' },
   { id:'base64', name:'Base64 Converter', desc:'Encode dan decode teks Base64.', category:'Developer', icon:Code2 },
   { id:'url', name:'URL Encoder', desc:'Encode dan decode URL atau query string.', category:'Developer', icon:Link2 },
   { id:'hash', name:'SHA-256 Generator', desc:'Buat hash SHA-256 secara lokal di browser.', category:'Developer', icon:ShieldCheck },
@@ -65,7 +64,7 @@ const categories = ['All','Downloader','Maker','Tools']
 const formatTime = value => {const seconds=Math.max(0,Math.floor(Number(value)||0));return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`}
 const categoryFor = (tool) => {
   if (tool.category==='Downloader') return 'Downloader'
-  if (['weather','currency','ip','dns','ssl','breach','lyricssearch','domainsecurity','aislate'].includes(tool.id)) return 'Tools'
+  if (['weather','currency','ip','dns','ssl','breach','lyricssearch','domainsecurity'].includes(tool.id)) return 'Tools'
   if (['qr','photohd','mp4mp3','pdftoolkit','imageprivacy','ocr','color','markdown'].includes(tool.id)) return 'Maker'
   if (['json','apiworkbench','base64','url','hash','uuid','regex','html','text','words','timestamp','unit','percentage','jwt','urlscan'].includes(tool.id)) return 'Tools'
   return 'Downloader'
@@ -105,7 +104,7 @@ function detectVisitorDetails(){
 }
 
 function App(){
-  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false)
+  const [active,setActive]=useState('All'), [query,setQuery]=useState(''), [selected,setSelected]=useState(null), [mobile,setMobile]=useState(false), [slateOpen,setSlateOpen]=useState(false)
   const [menuOpen,setMenuOpen]=useState(false), [musicPanelOpen,setMusicPanelOpen]=useState(false), [infoPage,setInfoPage]=useState(null), [playing,setPlaying]=useState(false), [trackIndex,setTrackIndex]=useState(0)
   const [selectedAlbum,setSelectedAlbum]=useState(()=>musicAlbums[0]?.name||''), [volume,setVolume]=useState(0.72), [muted,setMuted]=useState(false)
   const [audioTime,setAudioTime]=useState(0), [audioDuration,setAudioDuration]=useState(0)
@@ -239,10 +238,10 @@ function App(){
   useEffect(()=>{
     const onKeyDown=(event)=>{
       if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();searchRef.current?.focus()}
-      if(event.key==='Escape'){if(infoPage)setInfoPage(null);else if(selected)setSelected(null);else if(menuOpen)setMenuOpen(false);else if(document.activeElement===searchRef.current)searchRef.current.blur()}
+      if(event.key==='Escape'){if(infoPage)setInfoPage(null);else if(selected)setSelected(null);else if(slateOpen)setSlateOpen(false);else if(menuOpen)setMenuOpen(false);else if(document.activeElement===searchRef.current)searchRef.current.blur()}
     }
     window.addEventListener('keydown',onKeyDown);return ()=>window.removeEventListener('keydown',onKeyDown)
-  },[selected,menuOpen,infoPage])
+  },[selected,menuOpen,infoPage,slateOpen])
   const filtered=useMemo(()=>tools.filter(t=>(active==='All'||categoryFor(t)===active)&&(!onlyFav||favorites.includes(t.id))&&`${t.name} ${t.desc} ${t.category}`.toLowerCase().includes(query.toLowerCase())),[active,query,onlyFav,favorites])
   const toggleFav=(id)=>setFavorites(old=>{const next=old.includes(id)?old.filter(x=>x!==id):[...old,id];localStorage.setItem('tools-slate-favorites',JSON.stringify(next));return next})
   const tabs=[['All',Grid2X2],['Downloader',DownloadCloud],['Maker',WandSparkles],['Tools',Wrench]]
@@ -298,12 +297,13 @@ function App(){
         {filtered.length?<div className="tool-grid">{filtered.map((t,index)=><ToolCard key={t.id} index={index} tool={t} favorite={favorites.includes(t.id)} onFavorite={()=>toggleFav(t.id)} onClick={()=>setSelected(t)}/>)}</div>:<div className="empty"><Search size={28}/><h3>Tools tidak ditemukan</h3><p>Coba kata kunci atau kategori lain.</p><button onClick={()=>{setQuery('');setActive('All');setOnlyFav(false)}}>Reset pencarian</button></div>}
       </section>
     </main>
+    {!selected&&!infoPage&&!menuOpen&&!slateOpen&&createPortal(<button className="slate-fab" onClick={()=>setSlateOpen(true)} aria-label="Buka Slate" aria-expanded={slateOpen}><Sparkles size={19}/><span>Slate</span></button>,document.body)}
+    {slateOpen&&createPortal(<React.Suspense fallback={<div className="ai-widget-loading" role="status">Membuka Slate…</div>}><AISlateModal onClose={()=>setSlateOpen(false)}/></React.Suspense>,document.body)}
     {selected&&<React.Suspense fallback={<div className="modal-backdrop advanced-backdrop"><div className="advanced-loading" role="status"><span className="spin">◌</span> Memuat tool…</div></div>}>
       {(selected.id==='socialdownloader'||selected.id==='social-downloader'||selected.name?.trim().toLowerCase()==='social media downloader')?<SocialDownloaderModal key={`social-${selected.id}`} onClose={()=>setSelected(null)}/>
         :selected.id==='lyricssearch'?<LyricsSearchModal key={selected.id} onClose={()=>setSelected(null)}/>
         :selected.id==='photohd'?<PhotoHdModal key={selected.id} onClose={()=>setSelected(null)}/>
         :selected.id==='mp4mp3'?<Mp4ToMp3Modal key={selected.id} onClose={()=>setSelected(null)}/>
-        :selected.id==='aislate'?<AISlateModal key={selected.id} onClose={()=>setSelected(null)}/>
         :selected.id==='apiworkbench'?<ApiWorkbenchModal key={selected.id} onClose={()=>setSelected(null)}/>
         :selected.id==='json'?<JsonStudioModal key={selected.id} onClose={()=>setSelected(null)}/>
         :selected.id==='pdftoolkit'?<PdfToolkitModal key={selected.id} onClose={()=>setSelected(null)}/>
