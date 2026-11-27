@@ -40,7 +40,7 @@ export default async function handler(req, res) {
   if (!rateLimit(ip)) return respond(res, 429, { error: 'Batas penggunaan sementara tercapai. Tunggu satu menit lalu coba lagi.' })
 
   const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) return respond(res, 503, { error: 'AI Slate belum diaktifkan. Tambahkan GEMINI_API_KEY di Environment Variables proyek Vercel.' })
+  if (!apiKey) return respond(res, 503, { error: 'Slate belum diaktifkan. Tambahkan GEMINI_API_KEY di Environment Variables proyek Vercel.' })
 
   let body = req.body
   if (typeof body === 'string') {
