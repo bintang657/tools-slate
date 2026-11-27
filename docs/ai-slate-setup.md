@@ -16,6 +16,9 @@ For local development, put the key in an untracked `.env.local` file at the repo
 
 ## Operational notes
 
-- Requests are sent from the backend to Gemini, not from the browser to Google's API. Chat history is stored in browser local storage (up to 12 chats, recent 20 messages per chat); it is not sent anywhere except as context to Gemini when a message is submitted.
-- The API applies basic input limits, a short timeout, and an in-memory per-IP rate limit. Serverless instances do not share in-memory counters, so this is a best-effort guard rather than a robust global quota or abuse-control system. Consider adding a shared rate-limit store or platform-level protection before exposing it to heavy public traffic.
-- The API returns friendly messages for missing keys, quota exhaustion, and provider errors. It intentionally does not return the provider's raw error payload or API key.
+- Requests are sent from the backend to Gemini, not directly from the browser to Google's API. Responses stream into the chat. Retry, regenerate, edit, follow-up suggestions, and Markdown export are implemented in the app.
+- Chat history is stored in browser local storage (up to 12 chats, recent 20 messages per chat). Text and extracted PDF/DOCX content remain in that browser storage. Image binary data is kept in memory only and is not persisted in local storage.
+- Image attachments are resized/compressed in the browser; PDF text and DOCX extraction also run locally. TXT/Markdown/CSV/JSON are read locally. On submit, compressed image bytes and/or extracted document text are sent through the server to Gemini. Do not upload sensitive or confidential files. Scanned PDFs without selectable text need OCR first.
+- The API applies input limits, a 60-second function timeout, and a best-effort in-memory per-IP rate limit (12 requests per minute per serverless instance). Instances do not share counters, so this is not a robust global quota or abuse-control system.
+- The app does not add a paid provider or database. Gemini's free tier has account/model-specific quotas and availability; a free tier is not unlimited or guaranteed. Usage can be blocked when quotas or eligibility rules are reached.
+- The API returns friendly messages for missing keys, quota exhaustion, and provider errors. It intentionally does not return the API key.
