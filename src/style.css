@@ -1133,8 +1133,6 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 .media-control-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .media-control-row label { color: #c5d8e5; font-size: 11px; }
 .media-control-row select { max-width: 68%; min-height: 42px; padding: 9px 34px 9px 12px; border: 1px solid #9bcce52b; border-radius: 9px; background: #102438; color: #eaf6fc; font-size: 11px; }
-.media-privacy { display: flex; align-items: flex-start; gap: 8px; margin: 0; color: #8da9bc; font-size: 10px; line-height: 1.6; }
-.media-privacy svg { flex: 0 0 auto; color: #7ad6b2; }
 .photo-preview { display: grid; grid-template-columns: 64px minmax(0,1fr); align-items: center; gap: 12px; padding: 9px; border: 1px solid #a5d7f022; border-radius: 10px; background: #0c1b2a; }
 .photo-preview img { width: 64px; height: 52px; object-fit: cover; border-radius: 6px; }
 .photo-preview span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #adc2d1; font-size: 10px; }
@@ -1558,8 +1556,7 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 .ai-history-row:hover .ai-delete-chat,.ai-delete-chat:focus-visible { opacity: 1; }
 .ai-delete-chat:hover { background: rgba(255,100,100,.1); color: #ffaaaa; }
 .ai-history-empty { padding: 5px 8px; color: #657d91; font-size: 10px; line-height: 1.5; }
-.ai-sidebar-foot { display: flex; align-items: flex-start; gap: 7px; margin-top: auto; padding: 12px 7px 4px; border-top: 1px solid rgba(150,195,221,.1); color: #7792a5; font-size: 9px; line-height: 1.45; }
-.ai-sidebar-foot svg { flex: 0 0 14px; color: #69d2ae; }
+.ai-sidebar-foot { display: flex; align-items: center; justify-content: flex-end; margin-top: auto; padding: 12px 7px 4px; border-top: 1px solid rgba(150,195,221,.1); }
 .ai-slate-main { display: grid; grid-template-rows: 65px 48px minmax(0,1fr) auto; min-width: 0; min-height: 0; background: radial-gradient(ellipse at 50% 0%, rgba(29,74,102,.15), transparent 47%), #08111b; }
 .ai-slate-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 19px; border-bottom: 1px solid rgba(150,195,221,.11); }
 .ai-header-left,.ai-header-actions { display: flex; align-items: center; gap: 10px; }
@@ -1621,7 +1618,6 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 .ai-attachment-preview > span > button { display: grid; place-items: center; width: 24px; height: 24px; border: 0; border-radius: 6px; background: transparent; color: #a5c5d2; }
 .ai-attachment-preview > span > button:hover { background: rgba(255,255,255,.08); }
 .ai-composer-controls { align-items: center; min-width: 0; }
-.ai-composer-controls > span { white-space: nowrap; }
 .ai-attach-button { display: grid; place-items: center; flex: 0 0 40px; width: 40px; height: 40px; border: 1px solid rgba(130,189,217,.18); border-radius: 10px; background: rgba(255,255,255,.025); color: #a6c7d7; }
 .ai-attach-button:disabled { opacity: .4; }
 .ai-hidden-file-input { display: none; }
@@ -1640,7 +1636,6 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 .ai-composer-footer > div { display: flex; gap: 11px; color: #7e98a9; font-size: 10px; }
 .ai-send-button { display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: 12px; background: linear-gradient(130deg, #32a9c6, #6b74cf); color: #f5fdff; }
 .ai-send-button:disabled { opacity: .35; cursor: not-allowed; }.ai-send-button.stop { background: rgba(226,92,104,.2); color: #ffb2ba; }
-.ai-privacy-note { margin: 7px 3px 0; color: #7891a2; font-size: 10px; line-height: 1.5; text-align: center; }
 @media(max-width:720px) {
   .ai-slate-backdrop { padding: 0; }
   .ai-slate-window { grid-template-columns: minmax(0,1fr); width: 100vw; height: 100dvh; min-height: 0; border-radius: 0; border: 0; }
@@ -1656,7 +1651,6 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
   .ai-composer-wrap { padding: 0 10px 10px; }.ai-composer-footer > div { font-size: 7px; }
 }
 @media(max-width:380px) {
-  .ai-composer-controls > span:first-of-type { display: none; }
   .ai-composer-footer > div { gap: 7px; }
   .ai-mode-bar button { padding-inline: 7px; font-size: 11px; }
 }
@@ -1701,7 +1695,6 @@ footer>span { font-family:'DM Mono',monospace; font-size:9px; letter-spacing:.04
 .ai-suggestion-grid { gap: 7px; margin-top: 18px; }
 .ai-suggestion-grid button { min-height: 78px; padding: 10px; }
 .ai-composer-wrap { padding: 0 12px 11px; }
-.ai-privacy-note { font-size: 10px; }
 .ai-widget-loading { position: fixed; z-index: 80; right: 22px; bottom: 90px; padding: 16px 20px; border: 1px solid rgba(138,199,228,.3); border-radius: 16px; background: #0a1421; color: #cfe6f3; box-shadow: 0 20px 60px #0008; font-size: 12px; }
 @media(max-width:720px) {
   .ai-slate-backdrop { inset: auto 12px calc(82px + env(safe-area-inset-bottom)) auto; width: min(420px, calc(100vw - 24px)); }
