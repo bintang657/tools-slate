@@ -14,14 +14,14 @@ export function categoryFor(tool) {
 }
 
 export function filterAndSortTools(tools, { category = 'All', query = '', favorites = [], onlyFavorites = false, onlyRecent = false, recent = [], sort = 'default' } = {}) {
-  const needle = query.trim().toLocaleLowerCase()
+  const terms = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean)
   const favoriteSet = new Set(favorites)
   const recentOrder = new Map(recent.map((id, index) => [id, index]))
   const filtered = tools.filter(tool =>
     (category === 'All' || categoryFor(tool) === category) &&
     (!onlyFavorites || favoriteSet.has(tool.id)) &&
     (!onlyRecent || recentOrder.has(tool.id)) &&
-    (!needle || `${tool.name} ${tool.desc} ${tool.category} ${tool.tag || ''}`.toLocaleLowerCase().includes(needle)),
+    terms.every(term => `${tool.name} ${tool.desc} ${tool.category} ${tool.tag || ''}`.toLocaleLowerCase().includes(term)),
   )
 
   if (sort === 'name') filtered.sort((a, b) => a.name.localeCompare(b.name, 'id'))

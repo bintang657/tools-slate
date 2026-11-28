@@ -43,3 +43,11 @@ test('reads only known, unique IDs and safely handles corrupt storage', () => {
   assert.deepEqual(readToolIds({ getItem: () => '{broken' }, 'recent', new Set(['json'])), [])
   assert.deepEqual(readToolIds(null, 'recent', new Set(['json'])), [])
 })
+
+
+test('matches multiple search terms across fields in any order', () => {
+  assert.deepEqual(filterAndSortTools(tools, { query: 'developer   format' }).map(tool => tool.id), ['json'])
+  assert.deepEqual(filterAndSortTools(tools, { query: 'generator qr' }).map(tool => tool.id), ['qr'])
+  assert.deepEqual(filterAndSortTools(tools, { query: 'json missing' }), [])
+  assert.equal(filterAndSortTools(tools, { query: '   ' }).length, tools.length)
+})

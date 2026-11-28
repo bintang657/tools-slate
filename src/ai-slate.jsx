@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { normalizeHistory, searchChats } from './ai-history.js'
 import {
   Bot, Code2, Copy, Download, FileText, GraduationCap, Menu, Paperclip,
-  MessageSquarePlus, PenLine, RotateCcw, Send, Sparkles, Trash2, X, Square
+  MessageSquarePlus, PenLine, RotateCcw, Send, Sparkles, Trash2, X, Square, Search
 } from 'lucide-react'
 
 const STORAGE_KEY = 'tools-slate-ai-chats-v1'
@@ -29,19 +30,6 @@ const FOLLOW_UPS = {
   tools: ['Tunjukkan langkah penggunaan', 'Ada tool alternatif?', 'Jelaskan opsi terkait'],
 }
 const newChat = mode => ({ id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, title: 'Chat baru', mode, messages: [], updatedAt: Date.now() })
-function normalizeHistory(messages) {
-  const normalized = []
-  for (const message of messages) {
-    if (message.role === 'assistant' && !message.content?.trim()) continue
-    const previous = normalized[normalized.length - 1]
-    if (previous?.role === message.role) {
-      previous.content = `${previous.content}\n\n${message.content}`
-      previous.attachments = [...(previous.attachments || []), ...(message.attachments || [])]
-    } else normalized.push({ ...message, attachments: [...(message.attachments || [])] })
-  }
-  while (normalized.length && normalized[0].role !== 'user') normalized.shift()
-  return normalized.slice(-18)
-}
 const MAX_IMAGE_BYTES = 900_000
 const MAX_FILE_TEXT = 14_000
 
@@ -123,6 +111,7 @@ export function AISlateModal({ onClose }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [historyQuery, setHistoryQuery] = useState('')
   const [copiedId, setCopiedId] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [editingContext, setEditingContext] = useState('')
@@ -135,6 +124,7 @@ export function AISlateModal({ onClose }) {
   const pendingRequestRef = useRef(null)
   const chatsRef = useRef(chats)
   chatsRef.current = chats
+  const visibleChats = useMemo(() => searchChats(chats, historyQuery), [chats, historyQuery])
   const activeChat = useMemo(() => chats.find(chat => chat.id === activeId) || null, [chats, activeId])
   const mode = MODES.find(item => item.id === activeChat?.mode) || MODES[0]
 
@@ -211,7 +201,12 @@ export function AISlateModal({ onClose }) {
         const images = (normalizedHistory[index].attachments || []).filter(file => file.inlineData).slice(0, imagesLeft)
         if (images.length) { imageAttachments.set(index, images); imagesLeft -= images.length }
       }
-      const messages = normalizedHistory.map((message, index) => ({ role: message.role, content: message.content, ...(imageAttachments.has(index) ? { attachments: imageAttachments.get(index).map(file => ({ mimeType: file.mimeType, data: file.inlineData })) } : {}) }))
+      const messages = normalizedHistory.map((message, index) => {
+        const included = imageAttachments.get(index) || []
+        const missingImages = (message.attachments || []).filter(file => file.mimeType?.startsWith('image/') && !included.includes(file))
+        const note = missingImages.length ? '\n[Catatan: sebagian gambar dari pesan ini tidak tersedia dalam permintaan saat ini. Jangan menganggap gambar tersebut dapat dilihat; minta pengguna mengunggahnya kembali jika diperlukan.]' : ''
+        return { role: message.role, content: message.content.slice(0, 24000 - note.length) + note, ...(included.length ? { attachments: included.map(file => ({ mimeType: file.mimeType, data: file.inlineData })) } : {}) }
+      })
       const response = await fetch('/api/ai-slate', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mode: modeId, messages }),
@@ -323,7 +318,7 @@ export function AISlateModal({ onClose }) {
   }
   const submit = event => { event.preventDefault(); send() }
   const handleKeyDown = event => {
-    if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); send() }
+    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); send() }
   }
 
   return <div className="ai-slate-backdrop">
@@ -331,8 +326,9 @@ export function AISlateModal({ onClose }) {
       <aside className={`ai-slate-sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="ai-sidebar-top"><div className="ai-brand-mark"><img className="ai-logo-image" src="/media/slate-logo.png" alt="" aria-hidden="true" onError={event => { event.currentTarget.style.visibility = 'hidden' }}/></div><div><b>Slate</b></div><button className="ai-icon-button ai-mobile-close" onClick={() => setSidebarOpen(false)} aria-label="Tutup riwayat"><X size={17}/></button></div>
         <button className="ai-new-chat" onClick={createChat} disabled={busy || readingFiles}><MessageSquarePlus size={16}/> Chat baru</button>
+        <label className="ai-history-search"><Search size={15}/><input value={historyQuery} onChange={event => setHistoryQuery(event.target.value)} placeholder="Cari riwayat..." aria-label="Cari riwayat chat"/></label>
         <div className="ai-chat-history-label">RIWAYAT CHAT <span>{chats.length}/12</span></div>
-        <div className="ai-chat-history">{chats.length ? chats.map(chat => <div className={`ai-history-row ${chat.id === activeId ? 'active' : ''}`} key={chat.id}><button disabled={busy || readingFiles} onClick={() => {setActiveId(chat.id);setError('');setDraft('');setEditingId(null);setEditingContext('');setAttachments([]);setSidebarOpen(false)}}><span>{MODES.find(item => item.id === chat.mode)?.name || 'Asisten'}</span><b>{chat.title}</b></button><button className="ai-delete-chat" disabled={busy || readingFiles} onClick={() => removeChat(chat.id)} aria-label={`Hapus ${chat.title}`}><Trash2 size={14}/></button></div>) : <p className="ai-history-empty">Chat yang kamu simpan akan muncul di sini.</p>}</div>
+        <div className="ai-chat-history">{visibleChats.length ? visibleChats.map(chat => <div className={`ai-history-row ${chat.id === activeId ? 'active' : ''}`} key={chat.id}><button disabled={busy || readingFiles} onClick={() => {setActiveId(chat.id);setError('');setDraft('');setEditingId(null);setEditingContext('');setAttachments([]);setSidebarOpen(false)}}><span>{MODES.find(item => item.id === chat.mode)?.name || 'Asisten'}</span><b>{chat.title}</b></button><button className="ai-delete-chat" disabled={busy || readingFiles} onClick={() => removeChat(chat.id)} aria-label={`Hapus ${chat.title}`}><Trash2 size={14}/></button></div>) : <p className="ai-history-empty">{historyQuery.trim() ? 'Tidak ada chat yang cocok.' : 'Chat yang kamu simpan akan muncul di sini.'}</p>}</div>
         <div className="ai-sidebar-foot"><button className="ai-export-chat" onClick={() => exportChat(activeChat)} disabled={busy || !activeChat?.messages.length} aria-label="Ekspor chat sebagai Markdown" title="Ekspor chat sebagai Markdown"><Download size={15}/></button></div>
       </aside>
       {sidebarOpen && <button className="ai-sidebar-scrim" aria-label="Tutup riwayat" onClick={() => setSidebarOpen(false)}/>}
