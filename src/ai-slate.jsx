@@ -40,7 +40,7 @@ function normalizeHistory(messages) {
     } else normalized.push({ ...message, attachments: [...(message.attachments || [])] })
   }
   while (normalized.length && normalized[0].role !== 'user') normalized.shift()
-  return normalized.slice(-12)
+  return normalized.slice(-18)
 }
 const MAX_IMAGE_BYTES = 900_000
 const MAX_FILE_TEXT = 14_000
