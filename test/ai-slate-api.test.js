@@ -59,7 +59,7 @@ test('streams Vexo text and validates image data before forwarding', async () =>
     const stream = response.chunks.join('')
     assert.equal(response.statusCode, 200)
     assert.equal(response.headers['Content-Type'], 'text/event-stream; charset=utf-8')
-    assert.equal(requestUrl, 'https://vexoapi.azzamcodex.site/api/v1/chat/completions')
+    assert.equal(requestUrl, 'https://vexoapi.site/api/v1/chat/completions')
     assert.equal(requestHeaders.Authorization, 'Bearer server-only-test-key')
     assert.equal(requestBody.model, 'test/model')
     assert.equal(requestBody.stream, true)

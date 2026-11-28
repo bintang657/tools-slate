@@ -33,7 +33,7 @@ function respond(res, status, data) {
 }
 
 function publicUpstreamError(status, upstreamMessage = '') {
-  if (status === 401 || status === 403) return 'Kredensial Vexo tidak valid atau belum diizinkan. Periksa VEXO_API_KEY di Vercel.'
+  if (status === 401 || status === 403) return 'API key Vexo ditolak. Periksa VEXO_API_KEY di Vercel atau buat key baru jika key lama sudah dicabut.'
   if (status === 402) return 'Saldo atau batas pengeluaran Vexo tidak mencukupi. Periksa Billing dan spending limit akun Vexo.'
   if (status === 404) return 'Model Vexo tidak tersedia untuk API Key ini. Periksa VEXO_MODEL dan katalog model.'
   if (status === 429) return 'Permintaan Vexo sedang dibatasi atau kapasitas model penuh. Tunggu sebentar lalu coba lagi.'
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
   if (!rateLimit(ip)) return respond(res, 429, { error: 'Batas penggunaan sementara tercapai. Tunggu satu menit lalu coba lagi.' })
 
   const apiKey = process.env.VEXO_API_KEY
-  if (!apiKey) return respond(res, 503, { error: 'Layanan Slate belum diaktifkan. Tambahkan VEXO_API_KEY di Vercel Environment Variables.' })
+  if (!apiKey) return respond(res, 503, { error: 'Konfigurasi AI belum lengkap. Tambahkan VEXO_API_KEY di Vercel Environment Variables, lalu redeploy.' })
 
   let body = req.body
   if (typeof body === 'string') {
@@ -112,7 +112,7 @@ export default async function handler(req, res) {
   res.on('close', () => { if (!res.writableEnded) controller.abort() })
 
   try {
-    const upstream = await fetch('https://vexoapi.azzamcodex.site/api/v1/chat/completions', {
+    const upstream = await fetch('https://vexoapi.site/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
