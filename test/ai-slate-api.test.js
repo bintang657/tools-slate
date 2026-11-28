@@ -174,3 +174,46 @@ test('maps Vexo authentication failures to a safe message', async () => {
     restoreEnv('VEXO_API_KEY', previousKey)
   }
 })
+
+
+test('includes a safe Retry-After hint for Vexo 429 responses', async () => {
+  const previousKey = process.env.VEXO_API_KEY
+  const previousFetch = globalThis.fetch
+  process.env.VEXO_API_KEY = 'server-only-test-key'
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'private provider detail' } }), {
+    status: 429,
+    headers: { 'Retry-After': '17' },
+  })
+  try {
+    const response = mockResponse()
+    await handler(mockRequest({ mode: 'general', messages: [{ role: 'user', content: 'Halo' }] }), response)
+    assert.equal(response.statusCode, 429)
+    assert.equal(response.jsonBody.source, 'vexo')
+    assert.equal(response.jsonBody.retryAfterSeconds, 17)
+    assert.doesNotMatch(JSON.stringify(response.jsonBody), /private provider detail|server-only-test-key/)
+  } finally {
+    globalThis.fetch = previousFetch
+    restoreEnv('VEXO_API_KEY', previousKey)
+  }
+})
+
+test('marks the Slate-side request throttle separately from Vexo capacity errors', async () => {
+  const previousKey = process.env.VEXO_API_KEY
+  const previousFetch = globalThis.fetch
+  process.env.VEXO_API_KEY = 'server-only-test-key'
+  globalThis.fetch = async () => new Response('data: [DONE]\\n\\n', { status: 200 })
+  const ip = 'throttle-test-' + Date.now()
+  try {
+    let last
+    for (let i = 0; i < 13; i++) {
+      last = mockResponse()
+      await handler(mockRequest({ mode: 'general', messages: [{ role: 'user', content: 'Halo' }] }, ip), last)
+    }
+    assert.equal(last.statusCode, 429)
+    assert.equal(last.jsonBody.source, 'slate')
+    assert.equal(last.jsonBody.retryAfterSeconds, 60)
+  } finally {
+    globalThis.fetch = previousFetch
+    restoreEnv('VEXO_API_KEY', previousKey)
+  }
+})
