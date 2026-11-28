@@ -219,7 +219,9 @@ export function AISlateModal({ onClose }) {
       })
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}))
-        throw new Error(payload.error || `Slate merespons (${response.status}).`)
+        const wait = Number(payload.retryAfterSeconds)
+        const waitHint = Number.isFinite(wait) && wait > 0 ? ` Coba lagi dalam sekitar ${wait} detik.` : ''
+        throw new Error((payload.error || `Slate merespons (${response.status}).`) + waitHint)
       }
       if (response.headers.get('content-type')?.includes('text/event-stream') && response.body) {
         const reader = response.body.getReader()
