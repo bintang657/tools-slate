@@ -2,6 +2,7 @@
 const BUCKET = new Map();
 const WINDOW_MS = 60_000;
 const MAX_PER_WINDOW = 10;
+const MAX_RESPONSE_BYTES = 2 * 1024 * 1024;
 
 function rateLimit(ip) {
   const now = Date.now();
@@ -19,6 +20,11 @@ function rateLimit(ip) {
 }
 
 export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    res.setHeader('Allow', 'GET');
+    return res.status(405).json({ error: 'Method not allowed.' });
+  }
+
   const ip =
     (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
     req.socket?.remoteAddress ||
@@ -44,10 +50,20 @@ export default async function handler(req, res) {
     );
 
     if (!upstream.ok) {
-      return res.status(upstream.status).json({ error: `crt.sh returned ${upstream.status}` });
+      return res.status(upstream.status >= 500 ? 502 : upstream.status).json({ error: 'Certificate transparency provider returned an error.' });
     }
 
-    const data = await upstream.json();
+    const contentLength = Number(upstream.headers.get('content-length') || '0');
+    if (contentLength > MAX_RESPONSE_BYTES) {
+      return res.status(502).json({ error: 'Certificate transparency response is too large.' });
+    }
+    const raw = await upstream.text();
+    if (Buffer.byteLength(raw, 'utf8') > MAX_RESPONSE_BYTES) {
+      return res.status(502).json({ error: 'Certificate transparency response is too large.' });
+    }
+    let data;
+    try { data = raw ? JSON.parse(raw) : []; }
+    catch { return res.status(502).json({ error: 'Certificate transparency provider returned invalid JSON.' }); }
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=600');
     return res.status(200).json(Array.isArray(data) ? data.slice(0, 100) : []);
   } catch {
