@@ -112,11 +112,14 @@ export default async function handler(req, res) {
   res.on('close', () => { if (!res.writableEnded) controller.abort() })
 
   try {
-    const endpoint = new URL('https://vexoapi.site/api/v1/chat/completions')
-    endpoint.searchParams.set('key', apiKey)
+    const endpoint = 'https://vexoapi.site/api/v1/chat/completions'
     const upstream = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+        Authorization: `Bearer ${apiKey}`,
+      },
       body: JSON.stringify({
         model,
         messages,
