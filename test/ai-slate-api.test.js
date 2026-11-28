@@ -217,3 +217,27 @@ test('marks the Slate-side request throttle separately from Vexo capacity errors
     restoreEnv('VEXO_API_KEY', previousKey)
   }
 })
+
+
+test('uses the documented alternate free model when VEXO_MODEL is not configured', async () => {
+  const previousKey = process.env.VEXO_API_KEY
+  const previousModel = process.env.VEXO_MODEL
+  const previousFetch = globalThis.fetch
+  delete process.env.VEXO_MODEL
+  process.env.VEXO_API_KEY = 'server-only-test-key'
+  let requestBody
+  globalThis.fetch = async (_url, options) => {
+    requestBody = JSON.parse(options.body)
+    return new Response('data: [DONE]\\n\\n', { status: 200 })
+  }
+  try {
+    const response = mockResponse()
+    await handler(mockRequest({ messages: [{ role: 'user', content: 'Halo' }] }), response)
+    assert.equal(response.statusCode, 200)
+    assert.equal(requestBody.model, 'openai/gpt-oss-20b:free')
+  } finally {
+    globalThis.fetch = previousFetch
+    restoreEnv('VEXO_API_KEY', previousKey)
+    restoreEnv('VEXO_MODEL', previousModel)
+  }
+})
