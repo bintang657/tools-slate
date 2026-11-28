@@ -24,10 +24,17 @@ function mockResponse() {
   })
 }
 
-test('streams Gemini text and validates image data before forwarding', async () => {
-  const previousKey = process.env.GEMINI_API_KEY
+function restoreEnv(name, value) {
+  if (value === undefined) delete process.env[name]
+  else process.env[name] = value
+}
+
+test('streams Vexo text and validates image data before forwarding', async () => {
+  const previousKey = process.env.VEXO_API_KEY
+  const previousModel = process.env.VEXO_MODEL
   const previousFetch = globalThis.fetch
-  process.env.GEMINI_API_KEY = 'server-only-test-key'
+  process.env.VEXO_API_KEY = 'server-only-test-key'
+  process.env.VEXO_MODEL = 'test/model'
   let requestUrl = ''
   let requestHeaders
   let requestBody
@@ -37,8 +44,8 @@ test('streams Gemini text and validates image data before forwarding', async () 
     requestBody = JSON.parse(options.body)
     const encoder = new TextEncoder()
     return new Response(new ReadableStream({ start(controller) {
-      controller.enqueue(encoder.encode('data: {"candidates":[{"content":{"parts":[{"text":"Bagian "}]}}]}\n\n'))
-      controller.enqueue(encoder.encode('data: {"candidates":[{"content":{"parts":[{"text":"satu."}]}}]}\n\n'))
+      controller.enqueue(encoder.encode('data: {"choices":[{"delta":{"content":"Bagian "}}]}\n\n'))
+      controller.enqueue(encoder.encode('data: {"choices":[{"delta":{"content":"satu."}}]}\n\n'))
       controller.close()
     }}), { status: 200 })
   }
@@ -52,23 +59,25 @@ test('streams Gemini text and validates image data before forwarding', async () 
     const stream = response.chunks.join('')
     assert.equal(response.statusCode, 200)
     assert.equal(response.headers['Content-Type'], 'text/event-stream; charset=utf-8')
-    assert.match(requestUrl, /streamGenerateContent\?alt=sse/)
-    assert.equal(requestHeaders['x-goog-api-key'], 'server-only-test-key')
-    assert.ok(requestBody.contents[0].parts.some(part => part.inline_data?.mime_type === 'image/jpeg'))
+    assert.equal(requestUrl, 'https://vexoapi.azzamcodex.site/api/v1/chat/completions')
+    assert.equal(requestHeaders.Authorization, 'Bearer server-only-test-key')
+    assert.equal(requestBody.model, 'test/model')
+    assert.equal(requestBody.stream, true)
+    assert.ok(requestBody.messages[1].content.some(part => part.image_url?.url === 'data:image/jpeg;base64,YQ=='))
     assert.match(stream, /event: token\ndata: \{"text":"Bagian "\}\n\n/)
     assert.match(stream, /event: done\ndata:/)
     assert.doesNotMatch(stream, /server-only-test-key/)
   } finally {
     globalThis.fetch = previousFetch
-    if (previousKey === undefined) delete process.env.GEMINI_API_KEY
-    else process.env.GEMINI_API_KEY = previousKey
+    restoreEnv('VEXO_API_KEY', previousKey)
+    restoreEnv('VEXO_MODEL', previousModel)
   }
 })
 
-test('rejects malformed attachments without calling Gemini', async () => {
-  const previousKey = process.env.GEMINI_API_KEY
+test('rejects malformed attachments without calling Vexo', async () => {
+  const previousKey = process.env.VEXO_API_KEY
   const previousFetch = globalThis.fetch
-  process.env.GEMINI_API_KEY = 'server-only-test-key'
+  process.env.VEXO_API_KEY = 'server-only-test-key'
   let called = false
   globalThis.fetch = async () => { called = true; throw new Error('unexpected provider call') }
   try {
@@ -82,25 +91,41 @@ test('rejects malformed attachments without calling Gemini', async () => {
     assert.equal(called, false)
   } finally {
     globalThis.fetch = previousFetch
-    if (previousKey === undefined) delete process.env.GEMINI_API_KEY
-    else process.env.GEMINI_API_KEY = previousKey
+    restoreEnv('VEXO_API_KEY', previousKey)
   }
 })
 
-test('converts exhausted free-tier quota into a safe user-facing error', async () => {
-  const previousKey = process.env.GEMINI_API_KEY
+test('returns a clear activation error when the Vexo key is not configured', async () => {
+  const previousKey = process.env.VEXO_API_KEY
   const previousFetch = globalThis.fetch
-  process.env.GEMINI_API_KEY = 'server-only-test-key'
+  delete process.env.VEXO_API_KEY
+  let called = false
+  globalThis.fetch = async () => { called = true; throw new Error('unexpected provider call') }
+  try {
+    const response = mockResponse()
+    await handler(mockRequest({ mode: 'general', messages: [{ role: 'user', content: 'Halo' }] }), response)
+    assert.equal(response.statusCode, 503)
+    assert.match(response.jsonBody.error, /Tambahkan VEXO_API_KEY/)
+    assert.equal(called, false)
+  } finally {
+    globalThis.fetch = previousFetch
+    restoreEnv('VEXO_API_KEY', previousKey)
+  }
+})
+
+test('converts exhausted provider quota into a safe user-facing error', async () => {
+  const previousKey = process.env.VEXO_API_KEY
+  const previousFetch = globalThis.fetch
+  process.env.VEXO_API_KEY = 'server-only-test-key'
   globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'provider internal detail' } }), { status: 429 })
   try {
     const response = mockResponse()
     await handler(mockRequest({ mode: 'general', messages: [{ role: 'user', content: 'Halo' }] }), response)
     assert.equal(response.statusCode, 429)
-    assert.match(response.jsonBody.error, /Kuota gratis Slate sedang habis/)
+    assert.match(response.jsonBody.error, /Permintaan Vexo sedang dibatasi/)
     assert.doesNotMatch(JSON.stringify(response.jsonBody), /provider internal detail|server-only-test-key/)
   } finally {
     globalThis.fetch = previousFetch
-    if (previousKey === undefined) delete process.env.GEMINI_API_KEY
-    else process.env.GEMINI_API_KEY = previousKey
+    restoreEnv('VEXO_API_KEY', previousKey)
   }
 })
