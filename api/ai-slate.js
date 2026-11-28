@@ -32,6 +32,26 @@ function respond(res, status, data) {
   return res.status(status).json(data)
 }
 
+function retryAfterSeconds(headers) {
+  if (!headers) return null
+  const retryAfter = headers.get('retry-after')
+  if (retryAfter) {
+    const seconds = Number(retryAfter)
+    if (Number.isFinite(seconds) && seconds >= 0) return Math.min(900, Math.ceil(seconds))
+    const dateSeconds = Math.ceil((Date.parse(retryAfter) - Date.now()) / 1000)
+    if (Number.isFinite(dateSeconds) && dateSeconds >= 0) return Math.min(900, dateSeconds)
+  }
+  const reset = headers.get('ratelimit-reset') || headers.get('x-ratelimit-reset')
+  if (reset) {
+    const value = Number(reset)
+    if (Number.isFinite(value) && value >= 0) {
+      const seconds = value > 1_000_000_000 ? Math.ceil(value - Date.now() / 1000) : Math.ceil(value)
+      return Math.min(900, Math.max(0, seconds))
+    }
+  }
+  return null
+}
+
 function publicUpstreamError(status) {
   if (status === 401 || status === 403) return 'API key Vexo ditolak. Periksa VEXO_API_KEY di Vercel atau buat key baru jika key lama sudah dicabut.'
   if (status === 402) return 'Saldo atau batas pengeluaran Vexo tidak mencukupi. Periksa Billing dan spending limit akun Vexo.'
@@ -49,7 +69,7 @@ export default async function handler(req, res) {
   }
 
   const ip = String(req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown').split(',')[0].trim()
-  if (!rateLimit(ip)) return respond(res, 429, { error: 'Batas penggunaan sementara tercapai. Tunggu satu menit lalu coba lagi.' })
+  if (!rateLimit(ip)) return respond(res, 429, { error: 'Batas penggunaan Slate tercapai. Tunggu satu menit lalu coba lagi.', source: 'slate', retryAfterSeconds: 60 })
 
   const apiKey = process.env.VEXO_API_KEY
   if (!apiKey) return respond(res, 503, { error: 'Konfigurasi AI belum lengkap. Tambahkan VEXO_API_KEY di Vercel Environment Variables, lalu redeploy.' })
@@ -132,9 +152,12 @@ export default async function handler(req, res) {
     })
 
     if (!upstream.ok) {
-      await upstream.json().catch(() => ({}))
+      // Provider payloads may contain internal details; never forward them to the browser.
+      await upstream.text().catch(() => '')
+      const retry = upstream.status === 429 ? retryAfterSeconds(upstream.headers) : null
       return respond(res, upstream.status === 429 ? 429 : 502, {
         error: publicUpstreamError(upstream.status),
+        ...(upstream.status === 429 ? { source: 'vexo', retryAfterSeconds: retry } : {}),
       })
     }
     if (!upstream.body) return respond(res, 502, { error: 'Koneksi streaming Vexo tidak tersedia. Coba lagi.' })
