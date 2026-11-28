@@ -32,14 +32,14 @@ function respond(res, status, data) {
   return res.status(status).json(data)
 }
 
-function publicUpstreamError(status, upstreamMessage = '') {
+function publicUpstreamError(status) {
   if (status === 401 || status === 403) return 'API key Vexo ditolak. Periksa VEXO_API_KEY di Vercel atau buat key baru jika key lama sudah dicabut.'
   if (status === 402) return 'Saldo atau batas pengeluaran Vexo tidak mencukupi. Periksa Billing dan spending limit akun Vexo.'
   if (status === 404) return 'Model Vexo tidak tersedia untuk API Key ini. Periksa VEXO_MODEL dan katalog model.'
   if (status === 429) return 'Permintaan Vexo sedang dibatasi atau kapasitas model penuh. Tunggu sebentar lalu coba lagi.'
   if (status === 400) return 'Vexo menolak format permintaan. Periksa konfigurasi model dan lampiran.'
   if (status >= 500) return 'Layanan Vexo sedang bermasalah. Coba lagi sebentar.'
-  return upstreamMessage || 'Vexo tidak dapat memproses permintaan.'
+  return 'Vexo tidak dapat memproses permintaan.'
 }
 
 export default async function handler(req, res) {
@@ -112,12 +112,11 @@ export default async function handler(req, res) {
   res.on('close', () => { if (!res.writableEnded) controller.abort() })
 
   try {
-    const upstream = await fetch('https://vexoapi.site/api/v1/chat/completions', {
+    const endpoint = new URL('https://vexoapi.site/api/v1/chat/completions')
+    endpoint.searchParams.set('key', apiKey)
+    const upstream = await fetch(endpoint, {
       method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model,
         messages,
@@ -130,10 +129,9 @@ export default async function handler(req, res) {
     })
 
     if (!upstream.ok) {
-      const payload = await upstream.json().catch(() => ({}))
-      const message = payload.error?.message || ''
+      await upstream.json().catch(() => ({}))
       return respond(res, upstream.status === 429 ? 429 : 502, {
-        error: publicUpstreamError(upstream.status, message),
+        error: publicUpstreamError(upstream.status),
       })
     }
     if (!upstream.body) return respond(res, 502, { error: 'Koneksi streaming Vexo tidak tersedia. Coba lagi.' })
@@ -156,7 +154,7 @@ export default async function handler(req, res) {
       if (!raw || raw === '[DONE]') return
       try {
         const chunk = JSON.parse(raw)
-        if (chunk.error) throw new Error(publicUpstreamError(chunk.error.code || 502, chunk.error.message || ''))
+        if (chunk.error) throw new Error(publicUpstreamError(chunk.error.code || 502))
         const delta = chunk.choices?.[0]?.delta?.content
         if (typeof delta === 'string' && delta) sendEvent('token', { text: delta })
         else if (Array.isArray(delta)) {

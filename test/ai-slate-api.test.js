@@ -59,8 +59,10 @@ test('streams Vexo text and validates image data before forwarding', async () =>
     const stream = response.chunks.join('')
     assert.equal(response.statusCode, 200)
     assert.equal(response.headers['Content-Type'], 'text/event-stream; charset=utf-8')
-    assert.equal(requestUrl, 'https://vexoapi.site/api/v1/chat/completions')
-    assert.equal(requestHeaders.Authorization, 'Bearer server-only-test-key')
+    const upstreamUrl = new URL(requestUrl)
+    assert.equal(`${upstreamUrl.origin}${upstreamUrl.pathname}`, 'https://vexoapi.site/api/v1/chat/completions')
+    assert.equal(upstreamUrl.searchParams.get('key'), 'server-only-test-key')
+    assert.equal(requestHeaders.Authorization, undefined)
     assert.equal(requestBody.model, 'test/model')
     assert.equal(requestBody.stream, true)
     assert.ok(requestBody.messages[1].content.some(part => part.image_url?.url === 'data:image/jpeg;base64,YQ=='))
@@ -117,7 +119,7 @@ test('converts exhausted provider quota into a safe user-facing error', async ()
   const previousKey = process.env.VEXO_API_KEY
   const previousFetch = globalThis.fetch
   process.env.VEXO_API_KEY = 'server-only-test-key'
-  globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'provider internal detail' } }), { status: 429 })
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'provider internal detail with key=server-only-test-key' } }), { status: 429 })
   try {
     const response = mockResponse()
     await handler(mockRequest({ mode: 'general', messages: [{ role: 'user', content: 'Halo' }] }), response)
