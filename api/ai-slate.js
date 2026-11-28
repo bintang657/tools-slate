@@ -124,7 +124,7 @@ export default async function handler(req, res) {
   while (messages.length > 1 && messages[1].role !== 'user') messages.splice(1, 1)
   if (messages.length === 1) return respond(res, 400, { error: 'Tambahkan pesan pengguna sebelum mengirim.' })
 
-  const model = process.env.VEXO_MODEL || 'google/gemma-4-31b-it:free'
+  const model = process.env.VEXO_MODEL || 'openai/gpt-oss-20b:free'
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 60_000)
   let streaming = false
