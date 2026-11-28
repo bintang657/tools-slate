@@ -61,8 +61,9 @@ test('streams Vexo text and validates image data before forwarding', async () =>
     assert.equal(response.headers['Content-Type'], 'text/event-stream; charset=utf-8')
     const upstreamUrl = new URL(requestUrl)
     assert.equal(`${upstreamUrl.origin}${upstreamUrl.pathname}`, 'https://vexoapi.site/api/v1/chat/completions')
-    assert.equal(upstreamUrl.searchParams.get('key'), 'server-only-test-key')
-    assert.equal(requestHeaders.Authorization, undefined)
+    assert.equal(upstreamUrl.search, '')
+    assert.equal(requestHeaders.Authorization, 'Bearer server-only-test-key')
+    assert.equal(requestHeaders.Accept, 'text/event-stream')
     assert.equal(requestBody.model, 'test/model')
     assert.equal(requestBody.stream, true)
     assert.ok(requestBody.messages[1].content.some(part => part.image_url?.url === 'data:image/jpeg;base64,YQ=='))
@@ -126,6 +127,48 @@ test('converts exhausted provider quota into a safe user-facing error', async ()
     assert.equal(response.statusCode, 429)
     assert.match(response.jsonBody.error, /Permintaan Vexo sedang dibatasi/)
     assert.doesNotMatch(JSON.stringify(response.jsonBody), /provider internal detail|server-only-test-key/)
+  } finally {
+    globalThis.fetch = previousFetch
+    restoreEnv('VEXO_API_KEY', previousKey)
+  }
+})
+
+
+test('uses the documented Bearer authentication without exposing the key in the URL', async () => {
+  const previousKey = process.env.VEXO_API_KEY
+  const previousFetch = globalThis.fetch
+  process.env.VEXO_API_KEY = 'server-only-test-key'
+  let capturedUrl = ''
+  let capturedHeaders
+  globalThis.fetch = async (url, options) => {
+    capturedUrl = String(url)
+    capturedHeaders = options.headers
+    return new Response('data: [DONE]\\n\\n', { status: 200 })
+  }
+  try {
+    const response = mockResponse()
+    await handler(mockRequest({ messages: [{ role: 'user', content: 'Halo' }] }), response)
+    assert.equal(response.statusCode, 200)
+    assert.equal(capturedUrl, 'https://vexoapi.site/api/v1/chat/completions')
+    assert.equal(capturedHeaders.Authorization, 'Bearer server-only-test-key')
+    assert.doesNotMatch(capturedUrl, /server-only-test-key/)
+  } finally {
+    globalThis.fetch = previousFetch
+    restoreEnv('VEXO_API_KEY', previousKey)
+  }
+})
+
+test('maps Vexo authentication failures to a safe message', async () => {
+  const previousKey = process.env.VEXO_API_KEY
+  const previousFetch = globalThis.fetch
+  process.env.VEXO_API_KEY = 'server-only-test-key'
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'secret provider detail' } }), { status: 401 })
+  try {
+    const response = mockResponse()
+    await handler(mockRequest({ messages: [{ role: 'user', content: 'Halo' }] }), response)
+    assert.equal(response.statusCode, 502)
+    assert.match(response.jsonBody.error, /API key Vexo ditolak/)
+    assert.doesNotMatch(JSON.stringify(response.jsonBody), /secret provider detail|server-only-test-key/)
   } finally {
     globalThis.fetch = previousFetch
     restoreEnv('VEXO_API_KEY', previousKey)
