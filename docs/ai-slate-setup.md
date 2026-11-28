@@ -14,7 +14,7 @@ For local development, put the variables from `.env.example` in an untracked `.e
 
 ## Operational notes
 
-- Requests are sent from the backend to the Vexo-compatible chat-completions endpoint, not directly from the browser. Responses stream into the chat.
+- Requests are sent from the backend to the Vexo-compatible chat-completions endpoint, not directly from the browser. Per the Vexo dashboard instructions, the server adds `VEXO_API_KEY` as the `key` query parameter; keep it server-side and never log or share the full upstream URL. Responses stream into the chat.
 - Chat history is stored in browser local storage (up to 12 chats, recent 20 messages per chat). Text and extracted PDF/DOCX content remain in that browser storage. Image binary data is kept in memory only and is not persisted in local storage.
 - Image attachments are resized/compressed in the browser; PDF text and DOCX extraction also run locally. TXT/Markdown/CSV/JSON are read locally. On submit, compressed image bytes and/or extracted document text are sent through the server to the provider. Avoid sensitive or confidential files. Scanned PDFs without selectable text need OCR first.
 - The API applies input limits, a 60-second function timeout, and a best-effort in-memory per-IP rate limit (12 requests per minute per serverless instance). Instances do not share counters, so this is not a robust global quota or abuse-control system.
