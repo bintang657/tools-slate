@@ -9,6 +9,29 @@ const PLATFORM_HOSTS = {
 };
 const DOWNLOAD_TYPES = new Set(['hd', 'watermark', 'mp3']);
 const MAX_PROVIDER_JSON_BYTES = 2 * 1024 * 1024;
+const MAX_MEDIA_BYTES = 100 * 1024 * 1024;
+const RATE_WINDOW_MS = 60_000;
+const RATE_BUCKETS = new Map();
+
+function allowRequest(ip, limit) {
+  const now = Date.now();
+  const entry = RATE_BUCKETS.get(ip) || { count: 0, resetAt: now + RATE_WINDOW_MS };
+  if (now >= entry.resetAt) {
+    entry.count = 0;
+    entry.resetAt = now + RATE_WINDOW_MS;
+  }
+  entry.count += 1;
+  RATE_BUCKETS.set(ip, entry);
+  if (RATE_BUCKETS.size > 5000) {
+    for (const [key, value] of RATE_BUCKETS) if (now >= value.resetAt) RATE_BUCKETS.delete(key);
+  }
+  return entry.count <= limit;
+}
+
+function getClientIp(req) {
+  return String(req.headers['x-vercel-forwarded-for'] || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown')
+    .split(',')[0].trim().slice(0, 128);
+}
 
 function getPlatformFromUrl(raw) {
   let u;
@@ -29,7 +52,7 @@ async function readJson(response) {
   const len = Number(response.headers.get('content-length') || '0');
   if (len > MAX_PROVIDER_JSON_BYTES) throw new Error('Respons provider terlalu besar.');
   const raw = await response.text();
-  if (raw.length > MAX_PROVIDER_JSON_BYTES) throw new Error('Respons provider terlalu besar.');
+  if (Buffer.byteLength(raw, 'utf8') > MAX_PROVIDER_JSON_BYTES) throw new Error('Respons provider terlalu besar.');
   try {
     return raw ? JSON.parse(raw) : {};
   } catch {
@@ -57,7 +80,7 @@ async function extractWithSsave(url) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify({ url, format: 'video' }),
-    signal: AbortSignal.timeout(120000),
+    signal: AbortSignal.timeout(30_000),
   });
   const payload = await readJson(response);
   if (!response.ok) {
@@ -145,9 +168,15 @@ async function handleDownload(req, res) {
       `${API_BASE}/open/v1/download?id=${encodeURIComponent(id)}&type=${encodeURIComponent(type)}`,
       {
         headers: { Accept: 'application/octet-stream, application/json' },
-        signal: AbortSignal.timeout(120000),
+        signal: AbortSignal.timeout(60_000),
       }
     );
+
+    const declaredLength = Number(upstream.headers.get('content-length') || '0');
+    if (declaredLength > MAX_MEDIA_BYTES) {
+      await upstream.body?.cancel();
+      return res.status(413).json({ error: 'File media melebihi batas 100 MB.' });
+    }
 
     const contentType = (upstream.headers.get('content-type') || '').toLowerCase();
     if (!upstream.ok || contentType.includes('json') || contentType.startsWith('text/')) {
@@ -197,8 +226,18 @@ async function handleDownload(req, res) {
     const length = upstream.headers.get('content-length');
     if (length) res.setHeader('Content-Length', length);
 
-    res.write(first.value);
-    for await (const chunk of { [Symbol.asyncIterator]: () => iterator }) res.write(chunk);
+    let totalBytes = head.length;
+    res.write(head);
+    for await (const chunk of { [Symbol.asyncIterator]: () => iterator }) {
+      totalBytes += chunk.byteLength || chunk.length || 0;
+      if (totalBytes > MAX_MEDIA_BYTES) {
+        res.destroy(new Error('File media melebihi batas 100 MB.'));
+        return;
+      }
+      if (!res.write(chunk)) {
+        await new Promise((resolve) => res.once('drain', resolve));
+      }
+    }
     res.end();
   } catch (error) {
     if (!res.headersSent) {
@@ -209,6 +248,12 @@ async function handleDownload(req, res) {
 }
 
 export default async function handler(req, res) {
+  const ip = getClientIp(req);
+  const limit = req.method === 'POST' ? 10 : req.method === 'GET' ? 20 : 0;
+  if (limit && !allowRequest(ip, limit)) {
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(429).json({ error: 'Terlalu banyak permintaan. Coba lagi dalam satu menit.' });
+  }
   if (req.method === 'POST') return handleExtract(req, res);
   if (req.method === 'GET') return handleDownload(req, res);
   res.setHeader('Allow', 'GET, POST');
